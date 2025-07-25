@@ -3403,12 +3403,12 @@ myplot<-
 # print(myplot)
 
 
-# if(SAVEPLOTS){
+if(SAVEPLOTS){
   ggsave(filename = "figs/scenario2b_time_pi_nonoise.pdf",
          plot = myplot,
          height = 4,width = 4
   )
-
+}
 
 #####*********************************************************************######
 replicates=100
