@@ -806,7 +806,7 @@ RERUN=F
 
 if(RERUN){
   
-  source('response-mcmc-models.R')
+  source('model-mcmc.R')
   
 }else{
   
@@ -855,7 +855,7 @@ RERUN=F
 
 if(RERUN){
   
-  source("response-mcmc-models.R")
+  source("model-mcmc.R")
   
 }else{
   
@@ -900,7 +900,7 @@ RERUN=F
 
 if(RERUN){
   
-  source("response-mcmc-models-deltaSE.R")
+  source("model-mcmc-deltaSE.R")
   
 }else{
   
@@ -945,7 +945,7 @@ RERUN=F
 
 if(RERUN){
   
-  source("response-mcmc-models-ratio.R")
+  source("model-mcmc-ratio.R")
   
 }else{
   
@@ -990,7 +990,7 @@ RERUN=F
 
 if(RERUN){
   
-  source("response-mcmc-models.R")
+  source("model-mcmc.R")
   
 }else{
   
@@ -1035,7 +1035,7 @@ RERUN=F
 
 if(RERUN){
   
-  source("response-mcmc-models-ratio.R")
+  source("model-mcmc-ratio.R")
   
 }else{
   
@@ -3035,11 +3035,12 @@ ggplot(res)+
   xlim(0,120)+ylim(-100,0)+
   theme_minimal(base_family = "Times New Roman")
   
+if(SAVEPLOTS){
 ggsave(filename = "figs/scenario2a_pi_nonoise-lotslabels.pdf",
             plot = myplot,
             height = 20,width = 20
             )
-
+}
   myplot<-
 ggplot(res)+
   geom_jitter(aes(y=Percent.Change,
@@ -3055,11 +3056,14 @@ ggplot(res)+
   ylab("Percent diversity change (π%)")+
   xlim(0,100)+ylim(-100,0)+
   theme_minimal(base_family = "Times New Roman")
-    ggsave(filename = "figs/scenario2a_pi_nonoise-lotslabels.pdf",
+
+if(SAVEPLOTS){
+ggsave(filename = "figs/scenario2a_pi_nonoise-lotslabels.pdf",
             plot = myplot,
             height = 20,width = 20
             )
-
+}
+  
 # myplot
 
 if(SAVEPLOTS){
