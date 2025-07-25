@@ -2356,14 +2356,14 @@ if(SAVEPLOTS){
 ```
 
 ```{r possible new plot ,echo=FALSE, warning=FALSE,message=F, error=FALSE, eval=T, echo=FALSE}
-
+if(SAVEPLOTS){
 ggsave(filename = "figs/null_scenario.pdf",
        plot = plot_grid(plotb+theme(legend.position = "none")+coord_flip(), 
                         plota+theme(legend.position = "none")+coord_flip(), 
                         ncol=1),
        height = 8,width = 4
 )
-
+}
 ```
 
 ```{r biological_sampling ,echo=FALSE, warning=FALSE,message=F, error=FALSE, eval=T, echo=FALSE}
