@@ -2,8 +2,7 @@
 title: "Supplemental Materials | Response to Shaw et al. (2025)"
 author: "| Moi Exposito-Alonso\n| \n| Department of Integrative Biology, University
   of California Berkeley, California, USA\n| Howard Hughes Medical Institute, University
-  of California Berkeley, California, USA\n| \n| To whom correspondance should be
-  addressed: moisesexpositoalonso@gmail.com\n"
+  of California Berkeley, California, USA\n| \n| Correspondance: moisesexpositoalonso@gmail.com\n"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document:
@@ -75,14 +74,26 @@ source("Response-functions.R")
 
 ```
 
-
-```{r dataset, echo=F}
+```{r dataset, echo=F, message=FALSE, error=F, warning=F}
 d<-read.csv("Supporting Data 3 (systematic review dataset)- Final Dataset.csv") %>%
   # Corrections of mistakes found
   dplyr::mutate(Common.Name = ifelse(Common.Name=="maize", "Maize", Common.Name)) # Maize appears two times, one capitalized another not
 
-d$observation<-1:nrow(d)
+# Make some numbers numeric
+d$Early.Sample.N<-as.numeric(d$Early.Sample.N)
+d$Recent.Sample.N<-as.numeric(d$Recent.Sample.N)
+d$Gen.interval<-as.numeric(d$Gen.interval)
+d$Interval<-as.numeric(d$Interval)
+d$N.Loci<-as.numeric(d$N.Loci)
 
+
+# Add observation number
+d$observation<-1:nrow(d)
+# Generate median gen interval
+d$M.Gen.interval = d$Gen.interval - median(d$Gen.interval, na.rm=T)
+d$M.Year.Midpoint = d$Year.Midpoint - median(d$Year.Midpoint, na.rm=T)
+
+write.csv(file = "tmp/d.csv",x=d)
 ```
 
 ```{r subset metrics, echo=F,message=FALSE}
@@ -139,16 +150,22 @@ dfpici$pvalue<-compute_p_values(dfpi$HedgesG, dfpi$HedgesG.err)$p_value
 dfpici$pvalue_signed<-dfpici$pvalue * dfpi$HedgesG/abs(dfpi$HedgesG)
 dfpici$pvalue_color<- dfpici$Percent.Change/abs(dfpici$Percent.Change) *as.numeric(dfpici$pvalue<0.05/nrow(dfpici))
   dfpici$pvalue_color[is.na(dfpici$pvalue_color)]<-0
+# truncate
+dfpici$Percent.Change.truncated<-ifelse(dfpici$Percent.Change< (-100), -100, dfpici$Percent.Change)
+dfpici$Percent.Change.truncated<-ifelse(dfpici$Percent.Change.truncated > 100, 100, dfpici$Percent.Change.truncated)
+dfpici$n0 <-dfpi$Early.Sample.N
+dfpici$n1 <-dfpi$Recent.Sample.N
+# Add base pairs
+dfpici$totalbp<-ifelse(!is.na(dfpi$N.Loci), dfpi$N.Loci,dfpi$N.bp)
+# conservative p-value
+dfpici$pvalueconservative<-compute_p_values_conservative(dfpi$HedgesG, dfpi$HedgesG.err,dfpi$Early.Sample.N,dfpi$Recent.Sample.N)$p_value
+# Add back columns
 dfpici$HedgesG<-dfpi$HedgesG
 dfpici$HedgesG.err<-dfpi$HedgesG.err
 dfpici$Gen.interval<-dfpi$Gen.interval
 dfpici$N.Loci <-dfpi$N.Loci
 dfpici$Early.Sample.N <-dfpi$Early.Sample.N
 dfpici$Recent.Sample.N <-dfpi$Recent.Sample.N
-dfpici$n0 <-dfpi$Early.Sample.N
-dfpici$n1 <-dfpi$Recent.Sample.N
-dfpici$Percent.Change.truncated<-ifelse(dfpici$Percent.Change< (-100), -100, dfpici$Percent.Change)
-dfpici$Percent.Change.truncated<-ifelse(dfpici$Percent.Change.truncated > 100, 100, dfpici$Percent.Change.truncated)
 dfpici$Binomen.rotl <- dfpi$Binomen.rotl
 dfpici$PaperID <- dfpi$PaperID
 dfpici$Z.Year.Midpoint <- dfpi$Z.Year.Midpoint
@@ -162,30 +179,46 @@ dfpici$Family <- dfpi$Family
 dfpici$M.Gen.interval <- dfpi$Gen.interval-median(dfpi$Gen.interval)
 dfpici$M.Year.Midpoint <- dfpi$Year.Midpoint-median(dfpi$Year.Midpoint)
 
-# Add base pairs
-dfpici$totalbp<-ifelse(!is.na(dfpi$N.Loci), dfpi$N.Loci,dfpi$N.bp)
-# conservative
-dfpici$pvalueconservative<-compute_p_values_conservative(dfpi$HedgesG, dfpi$HedgesG.err,dfpi$Early.Sample.N,dfpi$Recent.Sample.N)$p_value
 
+############################
 # ALLELIC RICHNESS
 dfmci<-compute_diversity_change(dfm)
 dfmci$pvalue<-compute_p_values(g_values = dfm$HedgesG, g_se = dfm$HedgesG.err)$p_value
 dfmci$pvalue_signed<-dfmci$pvalue * dfm$HedgesG/abs(dfm$HedgesG)
 dfmci$pvalue_color<- dfmci$Percent.Change/abs(dfmci$Percent.Change) * as.numeric(dfmci$pvalue<0.05/nrow(dfmci))
   dfmci$pvalue_color[is.na(dfmci$pvalue_color)]<-0
-dfmci$Gen.interval<-dfm$Gen.interval
-dfmci$HedgesG<-dfm$HedgesG
-dfmci$HedgesG.err<-dfm$HedgesG.err
-dfmci$N.Loci <-dfmci$N.Loci
+# truncate
 dfmci$Percent.Change.truncated<-ifelse(dfmci$Percent.Change< (-100), -100, dfmci$Percent.Change)
 dfmci$Percent.Change.truncated<-ifelse(dfmci$Percent.Change.truncated > 100, 100, dfmci$Percent.Change.truncated)
+dfmci$n0 <-dfm$Early.Sample.N
+dfmci$n1 <-dfm$Recent.Sample.N
+# Add base pairs
+dfmci$totalbp<-ifelse(!is.na(dfm$N.Loci), dfm$N.Loci,dfm$N.bp)
+# conservative p-value
+dfmci$pvalueconservative<-compute_p_values_conservative(dfm$HedgesG, dfm$HedgesG.err,dfm$Early.Sample.N,dfm$Recent.Sample.N)$p_value
+# Add back columns
+dfmci$HedgesG<-dfm$HedgesG
+dfmci$HedgesG.err<-dfm$HedgesG.err
+dfmci$Gen.interval<-dfm$Gen.interval
+dfmci$N.Loci <-dfm$N.Loci
+dfmci$Early.Sample.N <-dfm$Early.Sample.N
+dfmci$Recent.Sample.N <-dfm$Recent.Sample.N
+dfmci$Binomen.rotl <- dfm$Binomen.rotl
 dfmci$PaperID <- dfm$PaperID
 dfmci$Z.Year.Midpoint <- dfm$Z.Year.Midpoint
 dfmci$Z.Gen.interval <- dfm$Z.Gen.interval
-dfmci$Binomen.rotl <- dfm$Binomen.rotl
+dfmci$Interval <- dfm$Interval
+dfmci$Marker.Type<-dfm$Marker.Type
+dfmci$observation <- dfm$observation
+dfmci$Kingdom <- dfm$Kingdom
+dfmci$Order <- dfm$Order
+dfmci$Family <- dfm$Family
+dfmci$M.Gen.interval <- dfm$Gen.interval-median(dfm$Gen.interval)
+dfmci$M.Year.Midpoint <- dfm$Year.Midpoint-median(dfm$Year.Midpoint)
 
 
-# also the complete twol sets
+#####*********************************************************************######
+# also the complete two sets
 dmoip<-compute_diversity_change(dmoi)
 dmoip$pvalue<-compute_p_values(dmoi$HedgesG, dmoi$HedgesG.err)$p_value
 dmoip$pvalue_color<- dmoip$Percent.Change/abs(dmoip$Percent.Change) * as.numeric(dmoip$pvalue<0.05/nrow(dmoip))
@@ -196,12 +229,16 @@ dmoi<-
   mutate(Diversity.Metric = ifelse(Diversity.Type %in% c("A","AR"), "M", "π" ))
 dmoip$Diversity.Metric = dmoi$Diversity.Metric
 
+
 # Also the original
 dp<-compute_diversity_change(d)
 dp$pvalue<-compute_p_values(g_values = d$HedgesG, g_se = d$HedgesG.err)$p_value
+dp$Diversity.Type <-d$Diversity.Type
+dp$Early.Sample.N <-d$Early.Sample.N
+dp$Recent.Sample.N <-d$Recent.Sample.N
+dp$N.Loci <-d$N.Loci
 
-
-
+#####*********************************************************************######
 # BACKUPS
 dfpici_backup<-dfpici
 dfpi_backup<-dfpi
@@ -210,6 +247,8 @@ dfm_backup<-dfm
 
 
 # write.csv(file = "tmp/dfpici.csv",dfpici_backup)
+write.csv(file = "tmp/dfpici.csv",dfpici_backup)
+write.csv(file = "tmp/dfmci.csv",dfmci_backup)
 
 ```
 
@@ -259,10 +298,7 @@ table(as.numeric(dfpici$pvalue_color == -1),
 
 ### Summary of numbers from the original dataset
 
-Metrics in Shaw et al (2025) are of course known to population genetics, but across the literature there are a lot of variations, and some metrics may not be comparable across studies.
-
-There are a number of metrics, not all of which are expected to change negatively or positively\
-(definitions from Authors)\
+Shaw et al (2025) include a number of metrics of genetic composition in their analyses. The definition (from Authors) is below:\
 AR (allelic richness)\
 A (mean alleles)\
 TA (total alleles)\
@@ -295,14 +331,13 @@ Nf (female effective population size),\
 Nc (effective population size estimated from a population census, and calculated based on an assumption about the Ne:Nc ratio),\
 Other4 (other metric associated with integrated statistics).\
 
-These were further grouped in four categories\
-(definitions from Authors)\
+These were further grouped in four categories (definitions from Authors):\
 Group1 = metrics based on variant counts (AR, A, TA, pA, NPL, Other1)\
 Group2 = metrics based on evenness of variant frequencies (He, pi, h, H, PIC, NEA, Fis, R, apFst, Freq, NPD, BS, Other2)\
 Group3 = metrics based on population means of individual-level diversity (Ho, SH, Ai, F, NH, Other3)\
 Group4 = integrated statistics (Ne, Nd, Nb, Nf, Nc, Other4).\
 
-\clearpage
+In this reanalyses, the dataset is filtered to only standard metrics of diversity:
 
 ```{r metric_count, echo=F}
 d$Diversity.Type %>%
@@ -335,7 +370,7 @@ d$Diversity.Type %>%
 
 -   We then focus on the one hand on average difference metrics, π diversity, He and π diversity. There are a total of `r sum(d$Diversity.Type=="He")` and `r sum(d$Diversity.Type=="pi")` studies with He and Pi measurements. We decided to combine them so there is sufficient sample size for downstream analyses (for biallelic loci, expected heterozygosity and π are the same value). We also focus on the number of alleles, `r sum(d$Diversity.Type=="A"|d$Diversity.Type=="AR")`, for which we also have population genetic expectations. Together, these are `r 100*sum(sum(d$Diversity.Type=="He"|d$Diversity.Type=="pi"),sum(d$Diversity.Type=="A"|d$Diversity.Type=="AR"))/nrow(d)`% of original dataset.
 
--   We also focus on studies with metrics in 2 time points, which makes comparisons most straightforward. The number of 2 timepoint measurements is: `r table(d$Statistical.Method)["2"]`, linear: `r table(d$Statistical.Method)["1"]`, and coalescent: `r table(d$Statistical.Method)["3"]`. Coalescent is `r 100*table(d$Statistical.Method)["3"]/nrow(d)`% of the original dataset.
+-   We also focus on studies with metrics in 2 time points, rather than linear trajectories or coalescent, which makes comparisons most straightforward. The number of 2 timepoint measurements is: `r table(d$Statistical.Method)["2"]`, linear: `r table(d$Statistical.Method)["1"]`, and coalescent: `r table(d$Statistical.Method)["3"]`. Coalescent is `r 100*table(d$Statistical.Method)["3"]/nrow(d)`% of the original dataset.
 
 ```{r summary_generations, echo=F,message=F}
 tmp=summary(dfpi$Gen.interval)
@@ -353,24 +388,7 @@ q3_gen_m=format(summary(dfpi$Gen.interval)[5], digits=3)
 
 ```
 
--   We focus on time intervals below 30 years. The studies over 100 years are rare, `r table(d$Interval>100)[2]` or `r format(100*table(d$Gen.interval>100)[2]/nrow(d), digits=3)`%, and the majority of those, `r round(100*(table(d$Statistical.Method, d$Interval>100)/cbind(table(d$Statistical.Method),table(d$Statistical.Method)))[3,2])`%, are coalescent-based. And if scaled to generations, only `r length(unique(na.omit(filter(dfpi, Gen.interval > 30)$Binomen.rotl)))` species had time intervals higher than 30 generations.
-
-```{r pi_kingdom_count, echo=F}
-
-# dfpi$Kingdom %>%
-#   table() %>%
-  # as.data.frame() %>%
-  # setNames(c("Kindom", "# species")) %>%
-  # kable(.,caption="Number of observations by Kingdom")
-
-table(dfpi$Kingdom,dfpi$Phylum ) %>% t() %>%
-  # as.data.frame() %>%
-  # setNames(c("Kindom", "# species")) %>%
-  kable(.,caption="Number of observations by Kingdom and Phylum")
-
-```
-
--   The number of observations by Kingdom and Phylum mostly show power to study insects, vertebrates, and flowering plants.
+-   The number of observations by Kingdom and Phylum mostly show observations include insects, vertebrates, and flowering plants. We do not do any filtering.
 
 ```{r check_domesticated_species_enrichment,echo=F, eval=T, message=F}
 domesticated=table(is.na(d$Domestic.Pest.Pathogen.Status))["FALSE"]
@@ -380,7 +398,7 @@ domesticatedorpests=table(!is.na(d$Domestic.Pest.Pathogen.Status))
 ```
 
 -   Number of observations of domesticated species:\
-    Domesticated `r domesticated` observations (% `r 100*domesticated/nrow(d)`). Domesticated/pathogens/pests `r domesticatedorpests` observations (% `r 100*domesticatedorpests/nrow(d)`).
+    Domesticated `r domesticated` observations (% `r 100*domesticated/nrow(d)`). Domesticated/pathogens/pests `r domesticatedorpests` observations (% `r 100*domesticatedorpests/nrow(d)`). We removed domesticated species.
 
 ```{r check_nuclear,echo=F, eval=T, message=F}
 nuclear=table(d$Genome)["Nuclear"]
@@ -391,7 +409,7 @@ nuclear=table(d$Genome)["Nuclear"]
 
 ### Summary of numbers from filtered dataset
 
-Total number `r nrow(dfpi)+nrow(dfm)` of which `r 100*nrow(dfpi)/(nrow(dfpi)+nrow(dfm))`% are $\pi$. The final subset is `r 100*(nrow(dfpi)+nrow(dfm))/nrow(d)`% of the original dataset.
+Total number `r nrow(dfpi)+nrow(dfm)` of which `r clean(100*nrow(dfpi)/(nrow(dfpi)+nrow(dfm)))`% are $\pi$. The final subset is `r clean(100*(nrow(dfpi)+nrow(dfm))/nrow(d))`% of the original dataset.
 
 Summaries of allelic richness $\pi$
 
@@ -451,6 +469,93 @@ Figure S \ref{fig:fig_check_funnel} shows the typical funnel shape whereby most 
 
 ```
 
+### Re-calculate effect sizes
+
+To reproduce Shaw calculation of effect size:
+
+$$g = J \cdot \frac{\pi_1 - \pi_0}{s_{\text{g-pooled}}}$$
+
+To calculate the corrected version we have the degrees of freedom used for effect size correction is: $df = n_{\text{early}} + n_{\text{recent}} - 2$. We used Hedges' correction factor $J$ for small-sample bias: $J = 1 - \frac{3}{4 \cdot df - 1}$.
+
+Its standard error was estimated as:
+
+$$SE_g = \sqrt{\frac{n_{\text{early}} + n_{\text{recent}}}{n_{\text{early}} \cdot n_{\text{recent}}}+ \frac{g^2}{2 \cdot (n_{\text{early}} +n_{\text{recent}})}}$$
+
+### Calculate a percentage diversity change
+
+#### Percentage change
+
+The fraction (or percentage if multiplied $\times$ 100) of diversity change is defined as: $$X_\pi =  \frac{\pi_{present} -\pi_{past}}{\pi_{past}}$$
+
+Each estimate came with sample size and some form of error extracted during the review process for both past (early) and present (recent) timepoints. The errors reported came in several forms: standard deviation (SD), standard error (SE), or the width of a 95% confidence interval (CI). All error types were converted to standard errors using the following rules (diversity $\pi$ and $M$ had mostly errors reported as SD or SE, only a few 95%CI and only 6 observations of $M$ with IQR, discarded):
+
+$$\text{SE} =\begin{cases}\displaystyle \frac{\text{SD}}{\sqrt{n}} & \text{if error type is SD} \\\text{SE} & \text{if already reported as SE} \\\displaystyle \frac{\text{CI width} / 2}{1.96} & \text{if reported as 95\% CI}\end{cases}$$
+
+where $n$ is the sample size. From this standard deviation (SD) was recomputed for completeness, as sample sizes were known for all observations as $\text{SD} = \text{SE} \times \sqrt{n}$. This was done separately for early and recent time points. Then pooled standard deviation was computed as:
+
+$$SD_{\text{pooled}} = \sqrt{\frac{(n_{\text{early}} - 1) \cdot SD_{\text{early}}^2 + (n_{\text{recent}} - 1) \cdot SD_{\text{recent}}^2}{n_{\text{early}} + n_{\text{recent}} - 2}}$$
+
+Just to have something informative of both studies, the effective sample size was computed as the harmonic mean of early and recent sample sizes: $n_{\text{eff}} = \frac{2 \cdot n_{\text{early}} \cdot n_{\text{recent}}}{n_{\text{early}} + n_{\text{recent}}}$.
+
+From this, we aim to compute a error of the measured change ($X_\pi = 100 \times \frac{\pi_{present} -\pi_{past}}{\pi_{past}} = \frac{\Delta_\pi}{\pi_{past}}$) The standard error of the change is computed assuming errors in the two time points are independent and estimated the standard error of the difference: $\text{SE}_{\Delta} = \sqrt{SE_{\text{early}}^2 + SE_{\text{recent}}^2}$, and scaled to be percentage change error:$\text{SE}_{\%\Delta} = \left( \frac{\text{SE}_{\Delta}}{\pi_0} \right) \times 100$.
+
+This standard error is not exact because of the division of $\pi_0$, which itself contains noise. We can attempt to create a second standard error uses the delta method. While both are approximations, the delta method attempts to provide a more sophisticated approximation. Consider $f(X, Y) = \left( \frac{X}{Y} - 1 \right) \times 100$, where $X = \pi$ and $Y = \pi_0$. We apply the **delta method** to approximate the variance of $f(X, Y)$. The first-order Taylor expansion is:
+
+$$\text{Var}[f(X, Y)] \approx 
+\left( \frac{\partial f}{\partial X} \right)^2 \cdot \text{Var}[X] +
+\left( \frac{\partial f}{\partial Y} \right)^2 \cdot \text{Var}[Y] +
+2 \cdot \frac{\partial f}{\partial X} \cdot \frac{\partial f}{\partial Y} \cdot \text{Cov}[X, Y]$$
+
+Assuming independence between $X$ and $Y$ (i.e., $\text{Cov}[X, Y] = 0$), the partial derivatives are:
+
+$$
+\frac{\partial f}{\partial X} = \frac{100}{Y}, \quad
+\frac{\partial f}{\partial Y} = -\frac{100 X}{Y^2}
+$$
+
+Substituting into the variance expression:
+
+$$
+\text{Var}[\%\Delta \pi] \approx 
+\left( \frac{100}{Y} \right)^2 \cdot \text{Var}[X] +
+\left( \frac{100 X}{Y^2} \right)^2 \cdot \text{Var}[Y]
+$$
+
+Thus, the **standard error** of the percent change is:
+
+$$
+\text{SE}[\%\Delta \pi] \approx \sqrt{
+\left( \frac{100}{Y} \right)^2 \cdot \text{SE}_X^2 +
+\left( \frac{100 X}{Y^2} \right)^2 \cdot \text{SE}_Y^2
+}
+$$
+
+#### Log ratio change
+
+Although likely an arithmetic percentage change is the most understandable metric, for completeness, I also calculate the ratio of change:
+
+$$LR_\pi =  \text{log} \big(\frac{\pi_{present}}{\pi_{past}}\big)$$
+
+When averaging the log ratio we get a geometric (rather than arithmetic) mean, which may be helpful.
+
+We can also calculate the standard error of the log ratio using the delta method. Let: $X = \pi$ (recent diversity) and $Y = \pi_0$ (early diversity), and $f(X, Y) = \log\left( \frac{X}{Y} \right) = \log(X) - \log(Y)$. We aim to compute the standard error of the log-ratio, $\text{SE}\left[ \log\left( \frac{X}{Y} \right) \right]$, using the **delta method**, assuming that $X$ and $Y$ are independent.
+
+The variance of $f(X, Y)$ is approximated as:
+
+$$\text{Var}[f(X, Y)] \approx \left( \frac{\partial f}{\partial X} \right)^2 \cdot \text{Var}[X] +\left( \frac{\partial f}{\partial Y} \right)^2 \cdot \text{Var}[Y]$$
+
+The partial derivatives are:
+
+$$\frac{\partial f}{\partial X} = \frac{1}{X}, \quad\frac{\partial f}{\partial Y} = -\frac{1}{Y}$$
+
+Substituting into the variance approximation:
+
+$$\text{Var}\left[ \log\left( \frac{X}{Y} \right) \right] \approx\left( \frac{1}{X} \right)^2 \cdot \text{SE}_X^2 +\left( \frac{1}{Y} \right)^2 \cdot \text{SE}_Y^2$$
+
+Therefore, the standard error of the log-ratio is:
+
+$$\text{SE}\left[ \log\left( \frac{X}{Y} \right) \right] =\sqrt{\left( \frac{\text{SE}_X}{X} \right)^2 +\left( \frac{\text{SE}_Y}{Y} \right)^2}$$.
+
 ### Summary statistics of changes
 
 Summaries of $\pi$ change:\
@@ -460,8 +565,6 @@ Median [IQR] Percentage change = `r printmedian(dfpici$Percent.Change)`% [`r pri
 Median [IQR] SE of Percentage change = `r printmedian(dfpici$SE.Percent.Change)`% [`r printIQR(dfpici$SE.Percent.Change)`%]\
 Mean Percentage change= `r printmean(dfpici$Percent.Change)`%\
 Mean SE of Percentage change= `r printmean(dfpici$SE.Percent.Change)`%\
-Mean Percentage change (removing 1% outliers) = `r printmean(dfpici$Percent.Change[dfpici$Percent.Change > quantile(dfpici$Percent.Change,0.005) & dfpici$Percent.Change < quantile(dfpici$Percent.Change,0.995)])`%\
-Range Percentage change (removing 1% outliers) = `r printranges(dfpici$Percent.Change[dfpici$Percent.Change > quantile(dfpici$Percent.Change,0.005) & dfpici$Percent.Change < quantile(dfpici$Percent.Change,0.995)])`%\
 
 Summaries of $M$ change:\
 Median [IQR] Hedges g = `r printmedian(dfm$HedgesG)` [ `r printIQR(dfm$HedgesG)`]\
@@ -469,10 +572,8 @@ Median [IQR] Error of Hedges g = `r printmedian(dfm$HedgesG.err)` [ `r printIQR(
 Median [IQR] Percentage change = `r printmedian(dfmci$Percent.Change)`% [`r printIQR(dfmci$Percent.Change)`%]\
 Median [IQR] SE of Percentage change = `r printmedian(dfmci$SE.Percent.Change)`% [`r printIQR(dfmci$SE.Percent.Change)`%]\
 Mean Percentage change= `r printmean(dfmci$Percent.Change)`%\
-Mean Percentage change (removing 1% outliers) = `r printmean(dfmci$Percent.Change[dfmci$Percent.Change > quantile(dfmci$Percent.Change,0.005) & dfmci$Percent.Change < quantile(dfmci$Percent.Change,0.995)])`%\
-Range Percentage change (removing 1% outliers) = `r printmean(dfmci$Percent.Change[dfmci$Percent.Change > quantile(dfmci$Percent.Change,0.005) & dfmci$Percent.Change < quantile(dfmci$Percent.Change,0.995)])`%\
 
-```{r check_signi_variation_subset, eval=T, warning=F, echo=FALSE,fig.width=4,fig.height=6, fig.cap="Distribution of effect sizes (g) and raw genetic diversity changes (%)."}
+```{r check_signi_variation_subset, eval=T, warning=F, echo=FALSE,fig.width=4,fig.height=6, fig.cap="Distribution of effect sizes (g) and raw genetic diversity changes (%). \\label{fig:data}"}
 
 plot1<-
 dmoip %>%
@@ -573,15 +674,13 @@ table(as.numeric(dfm$HedgesG < quantile(dfm$HedgesG, probs = 0.05)),
 
 ```
 
-Hedges' g and genetic diversity change in percentage are correlated since raw data is used to calculate g, although with a lot of noise (Pearson's r=`r cor.test(dmoip$HedgesG,dmoip$Percent.Change)$estimate`). The extremest values in $\pi$, which comprises the majority of the data however, typically do not coincide. We can see that of the 5% top $\pi$ values that decline based on Hedge's g (`r sum(declinetablepi[2,])`), only a small fraction are also among the top raw % values of decline (`r clean(100*declinetablepi[2,2]/sum(declinetablepi[2,]))`%). This is however the case of $M$ (`r clean(100*declinetablem[2,2]/sum(declinetablem[2,]))`%). Figure \ref{fig:raw} shows the raw average and estimated effect sizes in the comparision of Hedges' g and raw values of change (colors indicate significance, see section below).
+Hedges' g and genetic diversity change in percentage are correlated since raw data is used to calculate g (Figure S\ref{fig:data}), although not perfectly (Pearson's r=`r clean(cor.test(dmoip$HedgesG,dmoip$Percent.Change)$estimate)`). The extremest values in $\pi$, which comprises the majority of the data however, typically do not coincide. We can see that of the 5% top $\pi$ values that decline based on Hedge's g (`r sum(declinetablepi[2,])`), only a small fraction are also among the top raw % values of decline (`r clean(100*declinetablepi[2,2]/sum(declinetablepi[2,]))`%). Same for $M$ (`r clean(100*declinetablem[2,2]/sum(declinetablem[2,]))`%). Figure S\ref{fig:raw} shows the raw average and estimated effect sizes in the comparision of Hedges' g and raw values of change (colors indicate significance, see section below).
 
 \clearpage
 
 ## Text S2: Test the temporal shift of genetic diversity changes
 
 ### Calculate average change with different methods
-
-We first attempt to reproduce the main result of average negative effect size, which we assume was correctly calculated by the authors, as positive control. We aim to reproduce the effect size estimate of Hedge's g=-0.11 but also re-run analyses with actual raw % change in genetic diversity $\pi$ and $M$.
 
 ```{r mcmctests, echo=F, warning=F, eval=F}
 
@@ -592,12 +691,15 @@ clean(mean(subsetmodel$Sol[, "(Intercept)"]))
 dfpicisubset$Percent.Change %>% mean(na.rm=T)
 
 posteriormcmc(subsetmodel)
+
 ```
 
 ```{r meta_hedge, echo=F,warning=F,message=FALSE}
 # Classic inverse variance test
 metazg<-metaztest(dfpici$HedgesG, dfpici$HedgesG.err )
 metazperc<-metaztest(dfpici$Percent.Change, dfpici$SE.Percent.Change)
+
+metazgall<-metaztest(d$HedgesG, d$HedgesG.err )
 
 
 # MCMCglmm based metaregression
@@ -646,155 +748,65 @@ if(rerun){
 
 ```
 
-\
+*For diversity* $\pi$\
 
-*For Hedges' g of diversity* $\pi$\
-Arithmetic average Hedge's g = `r printmean(dfpici$HedgesG)` ±`r printCI(dfpici$HedgesG)` (95% CI).\
-Classic weighted mean Hedge's g = `r clean(metazg$Weighted_mean)` ± `r clean(metazg$CI_half_width)`(95% CI) (z = `r clean(metazg$z)`, $P$ = `r metazg$p`).\
-MCMCglmm-based random meta-regression (following Shaw). Posterior (intercept) mean of Hedge's g =  `r posteriormcmc(mcmcg)$summary`.
+Arithmetic mean Hedge's g = `r printmean(dfpici$HedgesG)` ±`r printCI(dfpici$HedgesG)` (95% CI).\
+Weighted SE mean Hedge's g = `r clean(metazg$Weighted_mean)` ± `r clean(metazg$CI_half_width)`(95% CI) (z = `r clean(metazg$z)`, $P$ = `r metazg$p`).\
+MCMCglmm mean (intercept) of Hedge's g = `r posteriormcmc(mcmcg)$summary`.
 
+ 
 
-Running MCMCglmm on the entire dataset: g = `r posteriormcmc(mcmcgall)`.
+Arithmetic mean % $\pi$ = `r printmean(dfpici$Percent.Change)`% ± `r printCI(dfpici$Percent.Change)`% (95% CI).\
+Weighted SE mean % $\pi$ = `r clean(metazperc$Weighted_mean)`% ± `r clean(metazperc$CI_half_width)`% (95% CI) (z = `r clean(metazperc$z)`, $P$ = `r metazperc$p`).\
+MCMCglmm mean (intercept) of % $\pi$ = `r posteriormcmc(mcmcperc)$summary` .
 
+Geometric mean % $\pi$ = `r printmean((exp(mean(dfpici$Log.Change)) - 1) * 100)`% ± `r clean((exp(printCI(dfpici$Log.Change)) - 1) * 100)`% (95% CI).\
+Weighted SE geometric mean % $\pi$ = `r clean((exp(mean(metaztest(dfpici$Log.Change, dfpici$SE.Log.Change)$Weighted_mean)) - 1) * 100)`% ± `r clean((exp(mean(metaztest(dfpici$Log.Change, dfpici$SE.Log.Change)$CI_half_width)) - 1) * 100)`% (95% CI).\
 
-**For diversity** $\pi$  
-Arithmetic average % $\pi$ = `r printmean(dfpici$Percent.Change)`% ± `r printCI(dfpici$Percent.Change)`% (95% CI).  
-Classic weighted mean % $\pi$ = `r clean(metazperc$Weighted_mean)`% ± `r clean(metazperc$CI_half_width)`% (95% CI) (z = `r clean(metazperc$z)`, $P$ = `r metazperc$p`).  
-MCMCglmm mean (intercept) of % $\pi$ = `r posteriormcmc(mcmcperc)$summary`.  
+*For allelic richness* $M$\
 
+Average Hedge's g = `r printmean(dfmci$HedgesG)` ±`r printCI(dfmci$HedgesG)` (95% CI).\
+Weighted SE mean Hedges'g = `r clean(mmetazg$Weighted_mean)` ± `r clean(mmetazg$CI_half_width)`(95% CI) (z = `r clean(mmetazg$z)`, $P$ = `r mmetazg$p`).\
+MCMCglmm mean (intercept) of Hedges'g = `r posteriormcmc(mmcmcg)$summary`.
 
+ 
 
-*For diversity* $M$\
+Arithmetic mean % $M$ = `r printmean(dfmci$Percent.Change)`% ± `r printCI(dfmci$Percent.Change)`% (95% CI).\
+Weighted SE mean % $M$ = `r clean(mmetazperc$Weighted_mean)` ± `r clean(mmetazperc$CI_half_width)`(95% CI) (z = `r clean(mmetazperc$z)`, $P$ = `r mmetazperc$p`).\
+MCMCglmm mean (intercept) of % $M$ = `r posteriormcmc(mmcmcperc)$summary`.
 
-Average Hedge's g = `r printmean(dfmci$HedgesG)` effect size, and average % $M$ = `r printmean(dfmci$Percent.Change)`%.
-
-The problem with raw averages is that the variance of each estimate differs.\
-A classic fixed-effect meta-analysis using inverse variance weighting and a z-score test yields:\
-Weighted mean g = `r clean(mmetazg$Weighted_mean)` (z = `r clean(mmetazg$z)`, $P$ = `r mmetazg$p`)\
-Weighted mean % $M$ = `r clean(mmetazperc$Weighted_mean)`% (z = `r clean(mmetazperc$z)`, $P$ = `r mmetazperc$p`)
-
-Following Shaw, we use the R package **MCMCglmm** to fit a random meta-regression using generation interval and midpoint as covariates (as described in Shaw's Methods, including MCMC settings).\
-Posterior intercept mean [95% HPD] of g = `r clean(mean(mmcmcg$Sol[, "(Intercept)"]))` [`r paste(clean(HPDinterval(mmcmcg$Sol[, "(Intercept)"])), collapse = " - ")`]\
-Posterior intercept mean [95% HPD] of % $M$ = `r clean(mean(mmcmcperc$Sol[, "(Intercept)"]))`% [`r paste(clean(HPDinterval(mmcmcperc$Sol[, "(Intercept)"])), collapse = " - ")`%]
-
-
+Geometric mean % $\pi$ = `r printmean((exp(mean(dfmci$Log.Change)) - 1) * 100)`% ± `r clean((exp(printCI(dfmci$Log.Change)) - 1) * 100)`% (95% CI).\
+Weighted SE geometric mean % $\pi$ = `r clean((exp(mean(metaztest(dfmci$Log.Change, dfmci$SE.Log.Change)$Weighted_mean)) - 1) * 100)`% ± `r clean((exp(mean(metaztest(dfmci$Log.Change, dfmci$SE.Log.Change)$CI_half_width)) - 1) * 100)`% (95% CI).\
 
 ### Variations of meta-regression
 
-```{r mcmcrobustness , eval=T, echo=F}
+To study the robustness of the original MCMCglmm meta-regression from Shaw, we conduct several variations of their function. From their supplement, they run MCMCglmm( g \~ Z.year.Midpoint + Z.Gen.interval, random= \~PaperID) using weak priors. Following Shaw, I used a weak inverse-gamma model prior (V=1, nu=0.002) Aka. "pweak".
+
+I generated variations over this model to understand robustness and explain why the results may differ from an arithmetic or error-weigthed mean (models were named numerically with increasing fixed or random terms, "m1"..."m6"):
+
+Changing fixed effects. I first changed the mean-centered generation interval fixed effect (shaw1 model). The mean-centering is necessary so that the intercept corresponds with the average fixed effect variable. However, the generation interval was not normally distributed. In fact, \>75% of the dataset showed lower number of generations (quantile 75% = 6 generations) than the mean (6.5 generations). This is due to a long tail effect. A approach less driven by long tails is including a fixed effect of generation interval median-centered. When conducting that, the effect typically becomes much weaker or non-significant (this corrected model was named shaw2).
+
+Changing random effects. Shaw includes Paper ID, and I tested the inclusion of Kingdom, species, and Marker type, to account for other possible heterogeneity in the data.
+
+Changing priors. Although a weak prior seems sensible, in Bayesian statistics is important to test model robustness based on priors, especially when signals appear weak. I tested not including any prior (using default MCMCglmm, nu=0, V=1, aka. "none"). I tested a more regularizing prior "preg" (V=1e-4, nu=10), and a prior that would limit unexplained variance to focus on the observation measurement error term ($1/SE^2$), aka "pfix" (V=1e-4, nu=100). The last one is closer to fixed effect meta-analysis. These priors represent a range from low to strong shrinking, from weak information but unstable estimates to stronger information in model from standard error measurements.
+
+The same set of models was fitted to the entire dataset (using effect sizes) as well as standard average diversity $\pi$ and allelic richness $M$ both effect sizes and percentage change. Models in reporting tables are ranked by DIC from MCMCglmm.
+
+Several top models in both $\pi$ and $M$ percentage changes included non-significant, positive and negatively significant trends.
+
+#### *All Shaw data effect size*
+
+```{r mcmcrobustness_all , eval=T, echo=F}
 RERUN=F
 
 if(RERUN){
-  library(tibble)
-  library(purrr)
-  library(dplyr)
   
-  # Step 1: Define model specs
-  model_specs <- tribble(
-    ~label, ~fixed_effects, ~random_effects, ~prior,
-    "m0Shaw", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"), list(R=list(V=diag(1), nu=0.002), G=list(G1=list(V=1, nu=0.002))),
-    "m0Shaw.median", "M.Year.Midpoint + M.Gen.interval", c("PaperID"), list(R=list(V=diag(1), nu=0.002), G=list(G1=list(V=1, nu=0.002))),
-    "mnull.priorreg", NULL, NULL, list(R = list(V = 1e-4, nu = 10)),
-    "mnull.priorfixlie", NULL, NULL, list(R = list(V = 1e-5, nu = 100)),
-    "mnull.priorweak", NULL, NULL, list(R = list(V = 1, nu = 0.002)),
-    "m1", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"), NULL,
-    "m2", "Z.Gen.interval + Z.Year.Midpoint", c("PaperID", "Kingdom", "Order", "Binomen.rotl"), NULL,
-    "m3", "M.Year.Midpoint + M.Gen.interval", c("PaperID"), NULL,
-    "m4", "M.Gen.interval + M.Year.Midpoint", c("PaperID", "Kingdom", "Order", "Binomen.rotl"), NULL,
-    "m5", "M.Gen.interval + M.Year.Midpoint", c("PaperID", "Kingdom", "Order", "Binomen.rotl"), NULL,
-    "m6", NULL, c("PaperID", "Kingdom", "Order", "Binomen.rotl"), NULL,
-    "m7", NULL, c("PaperID", "Kingdom"), NULL,
-    "m8", NULL, c("PaperID", "Kingdom", "Marker.Type"), NULL,
-    "m9", NULL, c("PaperID", "Kingdom", "Marker.Type"), NULL,
-    "m10", NULL, c("PaperID", "Kingdom", "Marker.Type"), NULL,
-    "m9.priorreg", NULL, c("PaperID", "Kingdom", "Marker.Type"),
-    list(
-      R = list(V = 1e-4, nu = 10),
-      G = list(
-        G1 = list(V = 1e-4, nu = 10),
-        G2 = list(V = 1e-4, nu = 10),
-        G3 = list(V = 1e-4, nu = 10)
-      )
-    ),
-    
-    "m9.priorfixlike", NULL, c("PaperID", "Kingdom", "Marker.Type"),
-    list(
-      R = list(V = 1e-4, nu = 100), 
-      G = list(
-        G1 = list(V = 1e-5, nu = 100),
-        G2 = list(V = 1e-5, nu = 100),
-        G3 = list(V = 1e-5, nu = 100)
-      )
-    ),
-    
-    "m9.priorweak", NULL, c("PaperID", "Kingdom", "Marker.Type"),
-    list(
-      R = list(V = 1, nu = 0.002),
-      G = list(
-        G1 = list(V = 1, nu = 0.002),
-        G2 = list(V = 1, nu = 0.002),
-        G3 = list(V = 1, nu = 0.002)
-      )
-    )
-  )
-  
-  
-  
-  # Step 2: Fit models and store
-  model_list <- model_specs %>%
-    mutate(model = pmap(list(fixed_effects, random_effects, prior), function(fe, re, pr) {
-      metamcmc(dfpici,
-               variable = "HedgesG",
-               se = "HedgesG.err",
-               fixed_effects = fe,
-               random_effects = re,
-               prior = pr)
-    }))
-  
-  
-  # Step 3 (replacing full summary parsing):
-  model_results <- model_list %>%
-    mutate(posterior = map(model, posteriormcmc)) %>%
-    mutate(
-      DIC = map_dbl(posterior, ~.x$DIC),
-      center = map_dbl(posterior, ~.x$center),
-      se = map_dbl(posterior, ~.x$se),
-      hpi_lower = map_dbl(posterior, ~.x$hpi_lower),
-      hpi_upper = map_dbl(posterior, ~.x$hpi_upper),
-      hpi_half_width = map_dbl(posterior, ~.x$hpi_half_width),
-      significant = hpi_lower > 0 | hpi_upper < 0,
-      summary_string = map_chr(posterior, ~.x$summary_string),
-      # Convert fixed/random/prior to character strings
-      fixed_str = map_chr(fixed_effects, ~ if (is.null(.x)) "none" else as.character(.x)),
-      random_str = map_chr(random_effects, ~ if (is.null(.x)) "none" else paste(.x, collapse = " + ")),
-      prior_str = map_chr(prior, function(p) {
-        if (is.null(p)) return("none")
-        components <- c()
-        if (!is.null(p$R)) components <- c(components, paste0("R(nu=", p$R$nu, ")"))
-        if (!is.null(p$G)) {
-          g_terms <- paste0(names(p$G), "(nu=", sapply(p$G, `[[`, "nu"), ")")
-          components <- c(components, g_terms)
-        }
-        paste(components, collapse = "; ")
-      })
-    ) %>%
-    select(
-      label, fixed_str, random_str, prior_str,
-      DIC, center, se, hpi_lower, hpi_upper, hpi_half_width,
-      significant, summary_string
-    )
-  
-  # Step 4: View ranked modelsmodel_results %>%
-  model_results<-
-    model_results %>%
-    arrange(DIC)
-  
-  write.csv(file = "tmp/metareg_model_results_hedge.csv",model_results)
+  source('response-mcmc-models.R')
   
 }else{
   
-  model_results<-read.csv(file = "tmp/metareg_model_results_hedge.csv")  %>%
-    arrange(DIC)
+  model_results<-read.csv(file = "tmp/metareg_model_results_hedge_alldata.csv")  %>%
+    arrange(-center)
 }
 
 model_results %>%
@@ -805,28 +817,45 @@ model_results %>%
   dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
   kable("latex", booktabs = TRUE, longtable = TRUE,
         escape = TRUE,
-        caption = "Effect size meta-regression model comparison.",
+        caption = "Shaw effect size meta-regression model comparison.",
         col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
         align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
   kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
 
 ```
 
+The exact model from Shaw et al. ("mshaw_pweak") recapitulates the found g=-0.11 reported int he paper. We note that the fixed erffect generation interval is non-significant, indicating that with increasing generation interval there is a positive trend in the effect size.
 
+```{r shawmodel, eval=T, warning=FALSE, echo=FALSE}
+load("tmp/mshaw.rda")
+summary(mshaw)$solutions %>% 
+  kable(caption = "Shaw meta-regression summary.",
+)
+```
+
+Exclusion of the key diversity variables makes the Shaw model non-significant.
+
+```{r shawmodelonepi, eval=T, warning=FALSE, echo=FALSE}
+load("tmp/mshawnopim.rda")
+summary(mshawnopim)$solutions %>% 
+  kable(caption = "Shaw meta-regression summary excluding π and M.",
+)
+
+```
+
+#### *Average genetic diversity* $\pi$ percent change
 
 ```{r mcmcrobustness_percent , eval=T, echo=F, warning=FALSE, error=FALSE, message=F}
-RERUN=T
+RERUN=F
 
 if(RERUN){
-  set.seed(1)
   
   source("response-mcmc-models.R")
-  
   
 }else{
   
   model_results<-read.csv(file = "tmp/metareg_model_results.csv")  %>%
-    arrange(DIC)
+    arrange(-center)
 }
 
 # parse model results
@@ -848,19 +877,201 @@ model_results %>%
   dplyr::mutate(summary_string = paste(summary_string, significant)) %>%
   dplyr::mutate(DIC = round(10 * DIC) / 10) %>%
   dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
+  # View
   # print
   kable("latex", booktabs = TRUE, longtable = TRUE,
         escape = TRUE,
-        caption = "Percentage π change meta-regression model comparison.",
+        caption = "Percentage diversity π meta-regression model comparison.",
         col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
         align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
   kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
 
 ```
 
-### Test per-study statistical differences, and whether there more or less positive trends?
+#### *Average genetic diversity* $\pi$ percent change (delta method for SE)
 
-Is the distribution of Hedge's g significantly different from zero? We follow a t-statistic distribution, which is the expected for Hedge's g . In addition we also conduct the test with a Gaussian distribution (which may be more akin to the meta-regression modeling, but this Normal distribution causes less significant results than t-distribution because is wider and thus more conservative). Figure \ref{fig:significanceplot} shows all studies ranked by $-log_{10}(p)$ of Hedge's g test per study, which has a substantial inflation. Figure \ref{fig:qq} shows the inflation of P-values assuming Hedges'g follow a t-distribution, making our detection of significant effects anti-conservative.
+```{r mcmcrobustness_percent_delta , eval=T, echo=F, warning=FALSE, error=FALSE, message=F}
+RERUN=F
+
+if(RERUN){
+  
+  source("response-mcmc-models-deltaSE.R")
+  
+}else{
+  
+  model_results<-read.csv(file = "tmp/metareg_model_results_deltaSE.csv")  %>%
+    arrange(-center)
+}
+
+# parse model results
+model_results <- model_results %>%
+  mutate(
+    prior_type = case_when(
+      prior_str == "none" ~ "none",
+      str_detect(prior_str, "nu=1e\\+06|nu=1e\\+06") ~ "fixed-like",
+      str_detect(prior_str, "nu=0.002") ~ "weak",
+      str_detect(prior_str, "nu=10") ~ "moderate",
+      TRUE ~ "custom"
+    )
+  )
+
+# knit the table
+model_results %>%
+  dplyr::mutate(significant = ifelse(significant, "*", "ns")) %>%
+  dplyr::mutate(summary_string = gsub(" (95% HPI)", "", summary_string, fixed = TRUE)) %>%
+  dplyr::mutate(summary_string = paste(summary_string, significant)) %>%
+  dplyr::mutate(DIC = round(10 * DIC) / 10) %>%
+  dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
+  # View
+  # print
+  kable("latex", booktabs = TRUE, longtable = TRUE,
+        escape = TRUE,
+        caption = "Percentage diversity π (delta SE) meta-regression model comparison.",
+        col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
+        align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
+
+```
+
+#### *Average genetic diversity* $\pi$ log ratio (geometric)
+
+```{r mcmcrobustness_percent_ratio , eval=T, echo=F, warning=FALSE, error=FALSE, message=F}
+RERUN=F
+
+if(RERUN){
+  
+  source("response-mcmc-models-ratio.R")
+  
+}else{
+  
+  model_results<-read.csv(file = "tmp/metareg_model_results_logratio.csv")  %>%
+    arrange(-center)
+}
+
+# parse model results
+model_results <- model_results %>%
+  mutate(
+    prior_type = case_when(
+      prior_str == "none" ~ "none",
+      str_detect(prior_str, "nu=1e\\+06|nu=1e\\+06") ~ "fixed-like",
+      str_detect(prior_str, "nu=0.002") ~ "weak",
+      str_detect(prior_str, "nu=10") ~ "moderate",
+      TRUE ~ "custom"
+    )
+  )
+
+# knit the table
+model_results %>%
+  dplyr::mutate(significant = ifelse(significant, "*", "ns")) %>%
+  dplyr::mutate(summary_string = gsub(" (95% HPI)", "", summary_string, fixed = TRUE)) %>%
+  dplyr::mutate(summary_string = paste(summary_string, significant)) %>%
+  dplyr::mutate(DIC = round(10 * DIC) / 10) %>%
+  dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
+  # View
+  # print
+  kable("latex", booktabs = TRUE, longtable = TRUE,
+        escape = TRUE,
+        caption = "Log ratio diversity π meta-regression model comparison.",
+        col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
+        align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
+
+```
+
+#### *Allelic richness* $M$ percent change
+
+```{r mcmcrobustness_percent_m , eval=T, echo=F, warning=FALSE, error=FALSE, message=F}
+RERUN=F
+
+if(RERUN){
+  
+  source("response-mcmc-models.R")
+  
+}else{
+  
+  model_results<-read.csv(file = "tmp/metareg_model_results_m.csv")  %>%
+    arrange(-center)
+}
+
+# parse model results
+model_results <- model_results %>%
+  mutate(
+    prior_type = case_when(
+      prior_str == "none" ~ "none",
+      str_detect(prior_str, "nu=1e\\+06|nu=1e\\+06") ~ "fixed-like",
+      str_detect(prior_str, "nu=0.002") ~ "weak",
+      str_detect(prior_str, "nu=10") ~ "moderate",
+      TRUE ~ "custom"
+    )
+  )
+
+# knit the table
+model_results %>%
+  dplyr::mutate(significant = ifelse(significant, "*", "ns")) %>%
+  dplyr::mutate(summary_string = gsub(" (95% HPI)", "", summary_string, fixed = TRUE)) %>%
+  dplyr::mutate(summary_string = paste(summary_string, significant)) %>%
+  dplyr::mutate(DIC = round(10 * DIC) / 10) %>%
+  dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
+  # View
+  # print
+  kable("latex", booktabs = TRUE, longtable = TRUE,
+        escape = TRUE,
+        caption = "Percentage allelic richness M meta-regression model comparison.",
+        col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
+        align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
+
+```
+
+#### *Allelic richness* $M$ log ratio (geometric)
+
+```{r mcmcrobustness_log_m , eval=T, echo=F, warning=FALSE, error=FALSE, message=F}
+RERUN=F
+
+if(RERUN){
+  
+  source("response-mcmc-models-ratio.R")
+  
+}else{
+  
+  model_results<-read.csv(file = "tmp/metareg_model_results_logratio_m.csv")  %>%
+    arrange(-center)
+}
+
+# parse model results
+model_results <- model_results %>%
+  mutate(
+    prior_type = case_when(
+      prior_str == "none" ~ "none",
+      str_detect(prior_str, "nu=1e\\+06|nu=1e\\+06") ~ "fixed-like",
+      str_detect(prior_str, "nu=0.002") ~ "weak",
+      str_detect(prior_str, "nu=10") ~ "moderate",
+      TRUE ~ "custom"
+    )
+  )
+
+# knit the table
+model_results %>%
+  dplyr::mutate(significant = ifelse(significant, "*", "ns")) %>%
+  dplyr::mutate(summary_string = gsub(" (95% HPI)", "", summary_string, fixed = TRUE)) %>%
+  dplyr::mutate(summary_string = paste(summary_string, significant)) %>%
+  dplyr::mutate(DIC = round(10 * DIC) / 10) %>%
+  dplyr::select(label, DIC, summary_string, fixed_str, random_str) %>%
+  # View
+  # print
+  kable("latex", booktabs = TRUE, longtable = TRUE,
+        escape = TRUE,
+          caption = "Log ratio diversity M meta-regression model comparison.",
+        col.names = c("label", "DIC", "summary", "fixed effects", "random effects"),
+        align = c("l", "r", "l", "p{5cm}", "p{5cm}")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"))
+
+```
+
+
+### Test per-study statistical differences: are there more or less positive trends?
+
+Is the distribution of Hedge's g significantly different from zero for a given study? To test this, we follow a t-statistic distribution, which is the expected for Hedge's g . In addition we also conduct the test with a Gaussian distribution (which may be more akin to the meta-regression modeling, but this Normal distribution causes less significant results than t-distribution because is wider and thus more conservative). Figure S\ref{fig:significanceplot} shows all studies ranked by $-log_{10}(p)$ of Hedge's g test per study, which has a substantial inflation. Figure \ref{fig:qq} shows the inflation of P-values assuming Hedges'g follow a t-distribution, making our detection of significant effects anti-conservative.
 
 ```{r check_significance_up_low , eval=T, echo=F}
 # Example counts
@@ -888,12 +1099,7 @@ mbtest<-binom.test(positive, total_significant, p = 0.5, alternative = "two.side
 
 ```
 
-We find that while the meta-regression framework shows a negative average intercept, the majority of the data points are not significantly different from zero.
-
-Distribution of positive and negative π div trajectory between two time points. Using Hedge's g for significance using two sided test and family-wise Bonferroni $P$-value correction 0.05/number of tests. The number of significant tests is as follows:\
-Non-significant `r table(dfpici$pvalue_color)[2]`\
-Declining `r table(dfpici$pvalue_color)[1]`\
-Increasing `r table(dfpici$pvalue_color)[3]`
+Distribution of positive and negative π div trajectory between two time points. Using Hedge's g for significance using two sided test and family-wise Bonferroni $P$-value correction 0.05/number of tests. The number of significant tests is as follows: Non-significant `r table(dfpici$pvalue_color)[2]`. Declining `r table(dfpici$pvalue_color)[1]`. Increasing `r table(dfpici$pvalue_color)[3]`.
 
 -   *For diversity π*\
     Number significant trends (i.e. either positive or negative) = `r sum(abs(dfpici$pvalue_color)==1)` of total `r nrow(dfpici)` points.\
@@ -1000,7 +1206,7 @@ We also test this with all the data points from Shaw et al (`r nrow(dp)`) to mak
     Prob. success (i.e. positive vs negative) = `r gbtest$estimate`\
     P value = `r gbtest$p.value`
 
-In addition, we compute the same binomial test without test statistics. Simply, count how many studies have Hedges' g (effect size) that is negative (`r sum(d$HedgesG<0,na.rm = T)`) out of all the dataset (`r sum(!is.na(d$HedgesG))`) and ask whether this is different from 50/50. There is no significant divergence from 50/50, with estimate `r gbtestall$estimate` and P-value=`r gbtestall$p.value`.
+In addition, I compute the same binomial test without test statistics. Simply, count how many studies have Hedges' g (effect size) that is negative (`r sum(d$HedgesG<0,na.rm = T)`) out of all the dataset (`r sum(!is.na(d$HedgesG))`) and ask whether this is different from 50/50. There is no significant divergence from 50/50, with estimate `r gbtestall$estimate` and P-value=`r gbtestall$p.value`.
 
 ```{r fig:fig_change_pi, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE, fig.height=3, fig.width=6, fig.cap="Relationship between raw values of diversity change π and Hedge's g significance.\\label{fig:significanceplot}"}
 
@@ -1458,20 +1664,20 @@ if(SAVEPLOTS){
 }
 ```
 
-```{r fig:sample_sizes ,echo=FALSE, warning=FALSE,message=FALSE,error=FALSE, eval=T, echo=FALSE, fig.height=4, fig.width=6, fig.cap="Sample and maerker numbers across studies \\label{fig:sample_sizes}"}
+```{r fig:sample_sizes ,echo=FALSE, warning=FALSE,message=FALSE,error=FALSE, eval=T, echo=FALSE, fig.height=3, fig.width=5, fig.cap="Sample numbers across past and present studies. \\label{fig:sample_sizes}"}
 p1<-
 ggplot(dfpici)+
-   geom_jitter(aes(y=Effective.N,
+   geom_jitter(aes(y=Early.Sample.N,
                 x=factor(pvalue_color),
                 color=factor(pvalue_color)
                  ),alpha=0.5
              )+
-        stat_summary(aes(y=Effective.N,
+        stat_summary(aes(y=Early.Sample.N,
                 x=factor(pvalue_color),
                 color=factor(pvalue_color)
                  ),alpha=1, size=2
              )+
-   geom_violin(aes(y=Effective.N,
+   geom_violin(aes(y=Early.Sample.N,
                 x=factor(pvalue_color),
                 color=factor(pvalue_color)
                  ),alpha=0.5
@@ -1483,7 +1689,7 @@ ggplot(dfpici)+
                                                 ))+
   scale_y_log10()+
   xlab("")+
-  ylab("Number of individuals (Hn)")+
+  ylab("Number of individuals (early)")+
   theme_minimal(base_family = "Times New Roman")+
   theme(legend.position = "none")
 
@@ -1519,9 +1725,7 @@ p2<-
 
 ```
 
-
-
-```{r fig:sample_sizes_past_present ,echo=FALSE, warning=FALSE,message=FALSE,error=FALSE, eval=T, echo=FALSE, fig.height=4, fig.width=6, fig.cap="Sample and maerker numbers across studies \\label{fig:samples_past_present}"}
+```{r fig:sample_sizes_past_present ,echo=FALSE, warning=FALSE,message=FALSE,error=FALSE, eval=T, echo=FALSE, fig.height=3, fig.width=2.5, fig.cap="Sample and marker numbers across studies \\label{fig:samples_past_present}"}
 tmp<-
 dfpici %>% 
   pivot_longer(
@@ -1538,7 +1742,7 @@ ggplot(tmp)+
   geom_boxplot(aes(y=Sample.N,x=Timepoint))+
   # stat_summary(aes(y=Sample.N,x=Timepoint), size=2)+
   geom_jitter(aes(y=Sample.N,x=Timepoint,
-                 ),alpha=0.5
+                 ),alpha=0.5, color="grey"
              )+
   scale_y_log10()+
   ylab("Number of samples")+
@@ -1592,6 +1796,95 @@ There was a significant enrichment of trajectories of $\pi$% decline in studies 
 
 There was not a significant enrichment of trajectories of $\pi$% decline in studies with \>100 individuals sampled (Odd=`r ntableenrichment$estimate`, Fisher's test $P$=`r ntableenrichment$p.value`) nor $\pi$% increases (Odd=`r ntableenrichmentpos$estimate`, Fisher's test $P$=`r ntableenrichmentpos$p.value`).
 
+```{r check_data_size_averages, eval=T, warning=F, error=F,echo=FALSE,fig.width=3,fig.height=5, fig.cap="Average diversity change of different data sizes."}
+
+averages <- dp %>% 
+  mutate(samplesizegroup=2^round(log(N.Loci))) %>% 
+  group_by(samplesizegroup) %>% 
+  summarise(
+    change = mean(Percent.Change, na.rm = TRUE),
+    logchange = 100 * (exp(mean(Log.Change, na.rm = TRUE)) - 1),
+    changeg = mean(Hedges.g.recalc, na.rm = TRUE),
+    abundance = n(),
+    changemeta=metaztest(Hedges.g.recalc, Hedges.g.SE.recalc)$Weighted_mean,
+    changemetap=metaztest(Hedges.g.recalc, Hedges.g.SE.recalc)$p
+  )
+p1<-
+ggplot(averages) +
+  geom_point(aes(x = samplesizegroup, y = changemeta, color=factor(changemeta>0), size=abundance,shape=changemetap<0.05)) +
+  ylim(-1.960,1.960)+
+  scale_color_manual("", values = c(
+    "FALSE"="red",
+    "TRUE"="navy"
+  ))+
+    scale_shape_manual(values = c(1,16))+
+
+  scale_x_log10()+
+  ylab("Hedge's g average")+
+  xlab("Number of loci (#)")+
+  theme(legend.position = "none")
+
+
+averages <- dp %>% 
+  mutate(samplesizegroup=2^round(log(Early.Sample.N))) %>% 
+  group_by(samplesizegroup) %>% 
+  summarise(
+    change = mean(Percent.Change, na.rm = TRUE),
+    logchange = 100 * (exp(mean(Log.Change, na.rm = TRUE)) - 1),
+    changeg = mean(Hedges.g.recalc, na.rm = TRUE),
+    abundance = n(),
+    changemeta=metaztest(Hedges.g.recalc, Hedges.g.SE.recalc)$Weighted_mean,
+    changemetap=metaztest(Hedges.g.recalc, Hedges.g.SE.recalc)$p
+  )
+
+p2<-
+ ggplot(averages) +
+  geom_point(aes(x = samplesizegroup, y = changemeta, color=factor(changemeta>0), size=abundance, shape=changemetap<0.05)) +
+  ylim(-1.960,1.960)+
+  scale_color_manual("", values = c(
+    "FALSE"="red",
+    "TRUE"="navy"
+  ))+
+  scale_shape_manual(values = c(1,16))+
+  scale_x_log10()+
+  ylab("Hedge's g average")+
+  xlab("Number of individuals (# early)")+
+  theme(legend.position = "none")
+
+plot_grid(p1,p2,ncol=1)
+ 
+# averagescombined <- dp %>%
+#    mutate(genomesizegroup=2^round(log(N.Loci))) %>%
+#    mutate(samplesizegroup=2^round(log(Early.Sample.N))) %>%
+#    group_by(samplesizegroup,genomesizegroup) %>%
+#    summarise(
+#      change = mean(Percent.Change, na.rm = TRUE),
+#      logchange = 100 * (exp(mean(Log.Change, na.rm = TRUE)) - 1),
+#      changeg = mean(Hedges.g.recalc, na.rm = TRUE),
+#      abundance = n(),
+#      changemeta=metaztest(Hedges.g.recalc, Hedges.g.SE.recalc)$Weighted_mean
+#    )
+# 
+# p3<-
+#  ggplot(averagescombined) +
+#    geom_point(aes(y = samplesizegroup, x = genomesizegroup, color=factor(changemeta>0), size=abundance)) +
+#    scale_x_log10()+
+#    scale_y_log10()+
+#    # ylim(-1.960,1.960)+
+#    scale_color_manual("", values = c(
+#      "FALSE"="red",
+#      "TRUE"="navy"
+#    ))+
+#    scale_x_log10()+
+#    ylab("Mean arithmetic genetic diversity change (%)")+
+#    xlab("Number of individuals (#)")+
+#    theme(legend.position = "none")
+# 
+#  
+# plot_grid(plot_grid(p1,p2,ncol=1), p3)
+
+```
+
 ### Test differences with decreasing noise.
 
 ```{r check_signi_variation, eval=T, warning=F, echo=FALSE,fig.width=6,fig.height=3, fig.cap="Relationship between raw values, significance and noise."}
@@ -1638,13 +1931,13 @@ p2<-
     # geom_hline(yintercept = 0, color='darkgrey')+
  geom_segment(aes(y=dfpi$HedgesG - 1.96*dfpi$HedgesG.err,yend=dfpi$HedgesG +  1.96*dfpi$HedgesG.err,
                      # size=-log10(pvalue+1e-17),
-                     x=SE.Percent.Change,
-                     xend=SE.Percent.Change,
+                     x=HedgesG.err,
+                     xend=HedgesG.err,
                      color=factor(pvalue_color)
                      ))+
   geom_point(aes(y=dfpi$HedgesG,
                    size=-log10(pvalue+1e-17),
-                   x=SE.Percent.Change,
+                   x=HedgesG.err,
                    color=factor(pvalue_color)
                    ),shape=16
                )+
@@ -1657,11 +1950,11 @@ p2<-
     # geom_xsidehistogram(aes(x=-log10(pvalue+1e-17)), fill='darkgrey')+
     # Tweaks
     scale_size_continuous(range = c(0.5,3))+
-    coord_cartesian(xlim=c(0,100))+
+    # coord_cartesian(xlim=c(0,100))+
     # scale_y_continuous(breaks = seq(-200,+400,by=50), labels = paste(seq(-200,+400,by=50),"%"))+
     # coord_cartesian(ylim=c(-200,400),)  +
     ylab("Hedges' g")+
-    xlab(TeX("SE Percentage Change (%)"))+
+    xlab(TeX("Hedges' g error"))+
     # xlab("")+
     theme_minimal(base_family = "Times New Roman")+
     # scale_x_reverse()+
@@ -1669,6 +1962,48 @@ p2<-
     theme(legend.position = "none")
 
 plot_grid(p2,p1)
+```
+
+```{r fig:noise_updown ,echo=FALSE, warning=FALSE, eval=F}
+ggplot(dfpici)+
+  geom_boxplot(aes(y=SE.Percent.Change.delta,
+                 x=factor(pvalue_color),
+                 color=factor(pvalue_color))
+  ,size=1)+
+  geom_jitter(aes(y=SE.Percent.Change,
+                 x=factor(pvalue_color),
+                 color=factor(pvalue_color)
+  ))+
+  scale_y_log10()+
+  scale_color_manual("Significance", values = c(
+    "red",
+    "grey",
+    "navy"
+  ))+
+  xlab("")+
+  theme_minimal(base_family = "Times New Roman")+
+  theme(legend.position = "none")
+
+# ggplot(dfpici)+
+#   geom_boxplot(aes(y=HedgesG.err,
+#                  x=factor(pvalue_color),
+#                  color=factor(pvalue_color))
+#   ,size=1)+
+#   geom_jitter(aes(y=HedgesG.err,
+#                  # size=-log10(pvalue+1e-17),
+#                  x=factor(pvalue_color),
+#                  color=factor(pvalue_color)
+#   ))+
+#   scale_y_log10()+
+#   scale_color_manual("Significance", values = c(
+#     "red",
+#     "grey",
+#     "navy"
+#   ))+
+#   xlab("")+
+#   theme_minimal(base_family = "Times New Roman")+
+#   theme(legend.position = "none")
+
 ```
 
 ```{r check_error_enrichm, echo=F , eval=T}
@@ -1696,9 +2031,9 @@ errortableenrichmentpos<-
 
 ```
 
-It has become clear that the very extreme values of genetic diversity increases and decreases are owed to high standard error. A good rule of thumb is that standard error \< 5% are accurate measurements, while \>5% are highly uncertain, as the measurements we are aiming to achieve are in the same or smaller order of magnitude. We then look at enrichment of significant values in the more certain studies (we consider a 5% percentage change error as the limit of acceptable). We find a marginal enrichment of significant decline diversity cases $\pi$ and low error measurements (Odd=`r errortableenrichment$estimate`, Fisher's test $P$=`r errortableenrichment$p.value`) but not with significantly increasing $\pi$ studies (Odd=`r errortableenrichmentpos$estimate`, Fisher's test $P$=`r errortableenrichmentpos$p.value`).
+It has become clear that the very extreme values of genetic diversity increases and decreases are owed to high standard error. A good rule of thumb is that standard error \< 5% are accurate measurements, while \>5% are highly uncertain, as the measurements we are aiming to achieve are in the same or smaller order of magnitude. We then look at enrichment of significant values in the more certain studies. I find a marginal enrichment of significant decline diversity cases $\pi$ and low error measurements (Odd=`r errortableenrichment$estimate`, Fisher's test $P$=`r errortableenrichment$p.value`) but not with significantly increasing $\pi$ studies (Odd=`r errortableenrichmentpos$estimate`, Fisher's test $P$=`r errortableenrichmentpos$p.value`).
 
-### Test differences with domesticated.
+### Test differences with domesticated vs not species.
 
 ```{r, eval=T, echo=FALSE}
 # Relationship domesticated and negative trend
@@ -1716,7 +2051,7 @@ table(dp$pvalue_color== 1,
 # mean(dp$Percent.Change[is.na(d$Domestic.Pest.Pathogen.Status)], na.rm=T)
 ```
 
-Finally, hadn't we removed domesticated, pathogens, or pests, we would find an upward bias in genetic diversity change as there is an enrichment of domesticated species and significant positive trends in the original data (Odds= `r fisherdomesticated$estimate`, Odds= `r fisherdomesticated$p.value`).
+Finally, hat the domesticated/pathogens/pest speices not being removed, we would find an upward bias in genetic diversity change as there is an enrichment of domesticated species and significant positive trends in the original data (Odds= `r fisherdomesticated$estimate`, Odds= `r fisherdomesticated$p.value`).
 
 \clearpage
 
@@ -1764,7 +2099,7 @@ ggplot(dfpici)+
 
 ```
 
-```{r check_signi_populations_sides, eval=T, warning=FALSE, echo=FALSE,fig.width=4,fig.height=3.5}
+```{r check_signi_populations_sides, eval=T, warning=FALSE, echo=FALSE}
 # Get th number of significant tests per species
 
 dfpici$Num_obs_per_species<-dfpi$Num_obs_per_species
@@ -1790,7 +2125,7 @@ dfpici %>%
 # table(repeatedmeasures$independentobservations>1)
 ```
 
-```{r check_signi_repeatability, evaluate=T, warning=FALSE,echo=F, message=F, error=FALSE, fig.width=8,fig.height=8, fig.cap="Positive and negative cases of species with multiple observations. \\label{fig:multipleobservationspositivenegative}"}
+```{r check_signi_repeatability, evaluate=T, warning=FALSE,echo=F, message=F, error=FALSE, fig.width=3.5,fig.height=3, fig.cap="Positive and negative cases of species with multiple observations. \\label{fig:multipleobservationspositivenegative}"}
 
 tmp<-
   dfpi_perspecies %>%
@@ -1845,7 +2180,7 @@ Some key notation:\
 
 ### BIOLOGICAL SAMPLING -- *null scenario*
 
-#### *Average genetic diversity* $\pi$ 
+#### *Average genetic diversity* $\pi$
 
 ```{r load simulations, echo=FALSE,error=F,eval=T, message=F}
 RELOAD=F
@@ -2059,27 +2394,32 @@ extrememeanchangeexcess<-
 Taking biological sampling into account, we found `r extremestudies` studies out of `r nrow(mss)` with changes in measured genetic diversity (`r extrememeanchange`%) beyond the 5% tail of the null distribution from subsampling (`r extrememeanchangenull`%). This corresponds to an excess of `r extrememeanchangeexcess`%.
 
 ```{r null_expectation_sampling, echo=F, warning=F,error=F, eval=T, message=F}
+REDO=F
 
-changesamples<-c()
-samples=1000
-
-for( i in 1:samples){
-tmp<-
-  ms %>% 
-  dplyr::filter(!is.na(relative_change)) %>% 
-  dplyr::group_by(observation) %>% 
-  dplyr::sample_n(size = 1) %>% 
-  ungroup %>% 
-  dplyr::summarise(mean=mean(relative_change,na.rm=T)) %>% unlist
-
-changesamples[i]<-tmp
+if(REDO){
+  changesamples<-c()
+  samples=1000
+  
+  for( i in 1:samples){
+    tmp<-
+      ms %>% 
+      dplyr::filter(!is.na(relative_change)) %>% 
+      dplyr::group_by(observation) %>% 
+      dplyr::sample_n(size = 1) %>% 
+      ungroup %>% 
+      dplyr::summarise(mean=mean(relative_change,na.rm=T)) %>% unlist
+    
+    changesamples[i]<-tmp
+  }
+  
+  save(file = "tmp/changesamples.rda", changesamples)
+}else{
+  load("tmp/changesamples.rda")
 }
-
 
 ```
 
 Bootstrapping 1000 times one simulation per paper gives a range of average π% change= `r printranges(changesamples)`%.
-
 
 The reason observations are very noisy is because the median sampling effort in Shaw is $n_0$=`r printmedian(as.numeric(dfpi$Early.Sample.N))` ,$n_1$=`r printmedian(as.numeric(dfpi$Recent.Sample.N))`, and the median number of loci is $L$=`r printmedian(as.numeric(dfpi$N.Loci))`. Fig. \ref{fig:SAMPLE_panmictic_noise_grid} shows the results of standard deviation of percent diversity change (%π) in a population of constant size sampled two times, in a grid of values from 5 individuals to 10,000 individuals, and a number of markers 1 to 1M. The median values of Shaw are marked in green, and indicate that the median error rate is over 10%, just as we see in the data.
 
@@ -2128,8 +2468,37 @@ ggplot(testsims)+
 
 plot_grid(p1,p2)
 
+valueerrormedian<-
+testsims %>% 
+  dplyr::filter(n0 <= quantile(as.numeric(dfpici$Early.Sample.N), 0.5, na.rm=T)) %>% 
+  dplyr::filter(L <= quantile(as.numeric(dfpici$N.Loci), 0.5, na.rm=T)) %>% 
+  dplyr::filter(!is.infinite(sdschange)) %>% 
+  pull(sdschange) %>% 
+  min(na.rm=T)
+valueerror75<-
+testsims %>% 
+  dplyr::filter(n0 <= quantile(as.numeric(dfpici$Early.Sample.N), 0.75, na.rm=T)) %>% 
+  dplyr::filter(L <= quantile(as.numeric(dfpici$N.Loci), 0.75, na.rm=T)) %>% 
+  dplyr::filter(!is.infinite(sdschange)) %>% 
+  pull(sdschange) %>% 
+  min(na.rm=T)
+
+neededsample1perc<-
+  testsims %>% 
+  dplyr::filter(sdschange <=1) %>% 
+  pull(n0) %>% 
+  min(na.rm = T)
+neededseq1perc<-
+  testsims %>% 
+  dplyr::filter(sdschange <=1) %>% 
+  pull(L) %>% 
+  median(na.rm = T)
+
+  
+  
 ```
 
+Based on Fig. S\ref{fig:null_sampling}, the expected error for 50% of the Shaw dataset is a minimum of `r valueerrormedian`%, and for 75% percentile of the dataset a minimum of `r valueerror75`%.
 
 #### *Allelic richness* $M$  
 
@@ -2143,10 +2512,34 @@ TBD.
 
 Based on population evolutionary genetic theory, in the **Mathematical Appendix**, we show that the expected relative $\pi$% change (or the fraction change, $X_\pi$, which is more mathematically convenient) from a reduction of $N_0$ to $N_1$ within a generation is null. The only reason genetic diversity may change as a subsample of a population is due to sampling noise or if for some reason the remaining fraction of the population is more related to each other. This affects a fraction of the dataset: `r table(dfpici$Gen.interval<1)['TRUE']` observations, `r clean(100*table(dfpici$Gen.interval<1)["TRUE"]/nrow(dfpici))`%. The results in Fig. \ref{fig:SAMPLE_panmictic_noise_grid}, corroborate the classic observation that substantial losses (\~5%) of genetic diversity are not expected unless the bottleneck in a species is \<\<100 individuals. NB. Fig. \ref{fig:SAMPLE_panmictic_noise_grid}: A jitter of 0.1N units was added for visualization. Min value of bottleneck truncated to 10M. Positive trend % of genetic diversity collapsed to 0%.\
 
+```{r scenario1a_test ,echo=FALSE, warning=FALSE, eval=F}
+res=G_inv_drift_population_loss(dfpicisubset,
+                                # generations = round(dfpicisubset$Gen.interval+1)
+                                generations = rep(1,nrow(dfpicisubset))
+                                )
+res$Gen.interval<-round(dfpicisubset$Gen.interval+1)
+res$Gen.interval[res$Gen.interval>100]<-100
+res$pvalue_color<-dfpicisubset$pvalue_color
+res$Binomen.rotl<-dfpicisubset$Binomen.rotl
+res<-res %>% arrange(abs(pvalue_color))
+
+printmedian(res$Pop.Bottleneck[res$pvalue_color== -1 &
+                                 res$Gen.interval<=1
+                                 ])
+printIQR(res$Pop.Bottleneck[res$pvalue_color== -1 &
+                                 res$Gen.interval<=1
+                                 ])
+
+```
+
 ```{r SAMPLE_panmictic, eval=T, echo=FALSE,warning=FALSE, fig.width=4,fig.height=3.5}
 
 # infer population bottleneck based on panmictic expectation
 res=G_inv_immediate_population_loss_panmictic(dfpicisubset)
+# Repeat with the 1/2N approach
+res=G_inv_drift_population_loss(dfpicisubset,
+                                generations = rep(1,nrow(dfpicisubset))
+                                )
 # add the p values from Hedge's tets
 res$pvalue_color<-dfpicisubset$pvalue_color
 res$Binomen.rotl<-dfpicisubset$Binomen.rotl
@@ -2161,9 +2554,9 @@ myplot <-
   xlab("Population immediate bottleneck (N)") +
   ylab("Percent diversity change (π%)") +
   scale_x_continuous(
-    breaks = -4:-0,
-    limits = c(-4, 0),
-    labels = TeX(sprintf("$10^{%d}$", abs(-4:0)))
+    breaks = -6:-1,
+    limits = c(-6, -1),
+    labels = TeX(sprintf("$10^{%d}$", abs(-6:-1)))
   ) +
   ggrepel::geom_text_repel(
     data = dplyr::filter(res, Pop.Bottleneck < 100),
@@ -2206,7 +2599,7 @@ ggplot(datsim)+
   ylab("Percent diversity change (π%)")+
   scale_x_continuous(
     breaks = -4:-1,
-    limits = c(-4, -0),
+    limits = c(-4, -1),
     labels = TeX(sprintf("$10^{%d}$", abs(-4:-1)))
   )+
   ylim(-100,0)+
@@ -2240,7 +2633,7 @@ Range = `r printranges(datsim$Pop.Bottleneck[datsim$pvalue_color== -1 & datsim$P
 
 #### *Allelic richnes* $M$  
 
-```{r fig:MAR_panmictic_noise ,echo=FALSE, warning=FALSE, eval=FALSE,fig.width=7,fig.height=3.5, fig.cap="Expected immediate population bottleneck given observed M%. \\label{fig:Immediate_panmictic_noise_grid}"}
+```{r fig:MAR_panmictic_noise ,echo=FALSE, warning=FALSE, eval=T,fig.width=7,fig.height=3.5, fig.cap="Expected immediate population bottleneck given observed M%. \\label{fig:SAMPLE_panmictic_noise_grid_M}"}
 SAVEPLOTS=F
 
 # infer population bottleneck based on panmictic expectation
@@ -2345,7 +2738,7 @@ IQR = `r printranges((datsim$Pop.Bottleneck[datsim$pvalue_color==-1]))`% of orig
 
 #### *Average genetic diversity* $\pi$
 
-```{r fig:drift_pi_noise ,echo=FALSE, warning=FALSE, eval=FALSE,fig.width=7,fig.height=3.5, fig.cap="Expected population bottleneck and drift given observed π%. \\label{fig:Drift_panmictic_noise_grid}"}
+```{r fig:drift_pi_noise ,echo=FALSE, warning=FALSE, eval=T,fig.width=7,fig.height=3.5, fig.cap="Expected population bottleneck and drift given observed π%. \\label{fig:Drift_panmictic_noise_grid}"}
 
 res=G_inv_drift_population_loss(dfpicisubset,generations = round(dfpicisubset$Gen.interval+1))
 res$Gen.interval<-round(dfpicisubset$Gen.interval+1)
@@ -3079,7 +3472,7 @@ plot_grid(myplot, myplot2)
 
 ```
 
-Summary
+Summary:
 
 *No noise*\
 Median = `r printmedian(res$Area.Loss[res$pvalue_color==-1])`% of original range lost.\
@@ -3095,7 +3488,7 @@ Ranges = `r printranges(datsim$Area.Loss[datsim$pvalue_color==-1])`% of original
 
 #### *Allelic richness* $M$
 
-There is no solution for this.
+We have no model for this.
 
 \clearpage
 
@@ -3266,19 +3659,15 @@ plot_grid(plota+theme(legend.position = "none"),
           plotc+theme(legend.position = "none"),
           plotd+theme(legend.position = "none"), nrow=1)
 
-# knitr::knit_hooks$set(plot = function(x, options)  {
-#   paste0(knitr::hook_plot_tex(x, options), "\n\\FloatBarrier\n")
-# })
 
 ```
-Fig. \ref{fig:fst} shows plots assuming final population sizes: $N1=100, 1000, 10000 , 1000000$. All data points of decline area assumed to be 0%. Dotted line marks the 100% increase, or doubling of population.
 
+Fig. \ref{fig:fst} shows plots assuming final population sizes: $N1=100, 1000, 10000 , 1000000$. All data points of decline area assumed to be 0%. Dotted line marks the 100% increase, or doubling of population.
 
 Fig. \ref{fig:increasedecrease} explains why growth of genetic diversity is even less expected than declines. It assumes a population started at 10,000 individuals, and went down to 1,000 or increased to 15,000.
 
-```{r fig:increasedecrease, echo=FALSE, warning=FALSE, echo=FALSE, warning=FALSE,fig.width=3.5,fig.height=3.5, fig.cap="The shape of genetic diversity increases is slower than decreases. \\label{fig:increasedecrease}"}
+```{r fig:increasedecrease, echo=FALSE, warning=FALSE, echo=FALSE, warning=FALSE,fig.width=3,fig.height=2.5, fig.cap="The shape of genetic diversity increases is slower than decreases. \\label{fig:increasedecrease}"}
 
-# --- Parameters ----------------------------------------------------
 N0        <- 1000                 # ancestral effective size
 scenarios <- tibble(
   scenario = c("Decline: 1000 → 500", "Growth: 1000 → 1500"),
@@ -3286,17 +3675,14 @@ scenarios <- tibble(
 )
 t_max <- 4 *N0*2                     
 
-# --- Helper: fraction of π-equilibrium at generation t -------------
 pi_frac <- function(N1, t, N0) {
   r <- N1 / N0                               # N1 / N0
   r + (1 - r) * (1 - 1 / (2 * N1))^t         # π_t / π_0
 }
 
-# --- Build tidy data frame -----------------------------------------
 plot_df <- expand_grid(t = 0:t_max, scenarios) %>%
   mutate(pi_over_pi0 = pi_frac(N1, t, N0))
 
-# --- Plot -----------------------------------------------------------
 ggplot(plot_df, aes(x = t, y = (pi_over_pi0-1)*100, colour = scenario)) +
   geom_line(size = 1) +
   labs(
@@ -3304,9 +3690,7 @@ ggplot(plot_df, aes(x = t, y = (pi_over_pi0-1)*100, colour = scenario)) +
     y       = "Percent change diversity (%π)",
     # y       = expression(pi[t] / pi[0]),
     colour  = "Scenario"#,
-    # title   = "Neutral recovery/loss of nucleotide diversity\nafter instantaneous population size change"
   ) +
-  # ylim(0, 1.6) +                      # room for the 1.5 asymptote
   theme_minimal(base_family = "Times New Roman")+
   scale_color_manual(values = c("red","navy"))+
 
@@ -3317,8 +3701,6 @@ ggplot(plot_df, aes(x = t, y = (pi_over_pi0-1)*100, colour = scenario)) +
   )
 
 ```
-
-
 
 \clearpage
 
@@ -3433,11 +3815,11 @@ Range = `r printranges((res$Area.Loss[res$pvalue_color==1]))`% of original range
 
 <!-- ## Text S6 Possible future scenarios -->
 
-## Text S6: Simple population bottleneck from LPI
+## Text S6: Simple population contraction averages from LPI
 
 ```{r lpi, echo=FALSE, warning=FALSE, fig.width=4, fig.height=3.5, fig.cap="Res loss from geographic area reduction on π%.\\label{fig:fragmentation}"}
 
-REDO <- T
+REDO = F
 
 if (REDO) {
   file_path <- "../dataLPI/LPD_2024_public.csv"
@@ -3513,9 +3895,35 @@ Xpi <- (1 - (1 - meanAx)^0.05)
 
 ```
 
-
-
-
 As a though experiment -- and to avoid controversial discussion on how or whether to measure abundance changes from LPI data -- I simply take the earliest and latest census value for each LPI tracked population and compute a arithmetic average if a species has multiple observations. This yields -`r printmean(meanAx*100)`% [IQR = -`r printIQR(meanAx*100)`%]. The median number of populations is: `r printmedian(summary_df_species_simple$n_populations)` populations [IQR = `r printIQR(summary_df_species_simple$n_populations)`]. The median number of years in between earliest and latest observation is: `r printmedian(summary_df_species_simple$mean_temporal_shift)` years [IQR = `r printIQR(summary_df_species_simple$mean_temporal_shift)` years].
 
-A thought experiment back-calculation of genetic diversity loss would be 
+A thought experiment back-calculation of genetic diversity loss can be created using, for instance, scenario 2a, $X_{\pi}=$ `r printmean(Xpi*100)`% [IQR `r printIQR(Xpi*100)`%].
+
+\clearpage
+
+## Text S7: Limitations, caveats, and thoughts forward
+
+### Thoughts on data limitations
+
+-   Published studies may have too short timelines to detect signals. About 10 years or 2 generations on average are in evolutionary trends effectively instantaneous and even if populations are undergoing bottlenecks and drift changes are expected to be small. Possibly applying historical/ancient DNA technologies would enable the temporal breadth backwards (see also next point). This will help avoiding the "baseline shifting problem" in biodiversity, where our reference point of what "original diversity" was shifts constantly leading to having a recent past (already eroded nature) as our pristine nature reference.
+
+-   A problem in genomic monitoring that we are facing now and will continue happening in the future is that genetic technologies are moving fast. Therefore, comparing observations published in the literature 10 years ago is today considered obsolete genetic technologies, so meta-analysis will not make use of the best current data. This is happening in the Shaw dataset, a typical molecular ecology study measuring genetic composition of a population may include 10 microsatellites for genotyping. Nowadays, even moderate budget projects could possibly use genomic technologies to generate much more accurate values of genetic diversity (NB the measurement error rate scales 1/number of bp sequenced). This can be done even using pool sequencing (i.e. sequencing multiple individuals' DNA in one tube) since one aims to get a population-level diversity estimate. In addition, while many genomic approaches need of assembling a genome blueprint for a species, Kmer-based approaches (digesting sequencing reads directly in DNA sequence tables) has proven to be efficient at characterizing genetic diversity (Roberts & Josephs et al. 2025, Evolution Letters).
+
+-   A problem in genetic data often ignored or not reported is the scale of measurement of genetic diversity. While population genetics classically describes the individual, the population, and the species-which has been adopted to essential biodiversity variables (Hoban et al. 2022 Biological Reviews)-these three levels are not well captured in sampling protocols nor in policy texts (CBD). The difficulty is that genetic diversity within a population may change while it not changing at the species-level scale. Likewise genetic diversity within an individual (heterozygosity or inbreeding coefficient) may change but diversity at the population is maintained. Different demographic processes, evolutionary processes, may affect these without them being problematic, in fact they may go in different directions. It seems all levels are relevant (intuitively perhaps within-species may be the most relevant) and analyses should be conducted at all such three scales.
+
+### Thoughts on inverse model limitations
+
+Apart from data limitations, the inverse modeling proposed in the text also has limitations and possible improvements. No model is going to be perfect and one needs to balance usability (e.g. back of the envelope predictions vs complex process-based simulations). Here I mostly opted for back of the envelope mathematical predictions such as single population dynamics or genetic diversity-area relationships as these are very powerful to scale to many species (scenario 1a,1b,2a). For more accurate predictions and dynamics I also included some simulation/numeric based approaches (scenario 2b, Mualim et al 2024 bioRxiv) which can be extended to any population geographic conformation wanted, starting population size, migration rates, but these require further information per species.
+
+-   Shifting baseline problem underestimates impacts: Many species have already decreased in population sizes and thus contemporary measurements used in modeling (bottlenecks - to - genetics) or inverse modeling (genetic - to - bottlenecks) equations will underestimate past declines of genetic diversity before either genetic monitoring or popualtion monitoring were established.
+
+-   Survival bias underestimates impacts: by definition genetic monitoring is only going to capture genetic diversity within a population, but cannot quantify genetic diversity loss of unsampled or extinct populations. It is likely that many populations within species are being altered with habitat losses (Exposito-Alonso 2022 Science) and thus genetic diversity loss should be larger than, e.g., what is inferred in Fig. 2.
+
+-   Wild populations often do not follow Wright-Fisher evolutionary assumptions, modeling may under- or over-estimate impacts. The inferences based on evolutionary theory equations, equilibrium, sampling, necessarily use assumptions. Some assumptions involve no natural selection, random outcrossing of individuals (scenario 1a/1b), equal reproduction, etc. Underestimation may occur if, for instance, bottlenecks are impacting populations' Ne to a larger degree due to selfing or other. Models may overestimate impacts of bottlenecks, for instance, when in nature populations have overlapping generations that maintain genetic diversity.
+
+-   Unknown refugia/reservoirs of populations containing much of a species genetic diversity will protect it to impacts elewhere thus models may over-estimate genetic diversity loss.
+
+```{=html}
+<!-- -->
+```
+-   Historical trends have legacy trajectories in genetic diversity. Species are not static, and are often beem changing in population size for long periods of time. Whether these are upward or downward, will have effects in genetic diversity trajectories in the future (even with contemporary rapid changes in population).

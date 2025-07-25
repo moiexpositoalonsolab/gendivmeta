@@ -2,8 +2,7 @@
 title: "Mathematical appendix | Response to Shaw et al. (2025)"
 author: "| Moi Exposito-Alonso\n| \n| Department of Integrative Biology, University
   of California Berkeley, California, USA\n| Howard Hughes Medical Institute, University
-  of California Berkeley, California, USA\n| \n| To whom correspondance should be
-  addressed: moisesexpositoalonso@gmail.com\n"
+  of California Berkeley, California, USA\n| \n| Correspondance: moisesexpositoalonso@gmail.com\n"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document:
@@ -23,257 +22,260 @@ editor_options:
 
 ### Overview of evolutionary population genetics parameters
 
-*Diversity parameters*
+**Diversity parameters**
 
-$\pi$ nucleotide diversity or expected heterozygosity (which are identical under a biallelic loci condition).\
-$S$ allelic richness, or segregating sites, or number of variable positions, or number of mutations in a strand of DNA. We use $M$ to avoid confusions with species richness from ecology. We also avoid $A$ from alleles to avoid confusions with area of habitat.
-$\theta$ the diversity parameter of a population, which under equilibrium $\theta=4N_e \mu$. 
+- $\pi$ = nucleotide diversity or expected heterozygosity (identical under biallelic loci)
+- $S$ = allelic richness, segregating sites, number of variable positions, or number of mutations in a DNA strand. **Note**: We use $M$ instead of $S$ to avoid confusion with species richness from ecology, and avoid $A$ (alleles) to prevent confusion with area of habitat
+- $\theta$ = diversity parameter of a population; under equilibrium $\theta = 4N_e \mu$
 
-\*Population parameters\*
+**Population parameters**
 
-$N_0$ the population size at some past time. We may also use $N$ as this is the long-term equilibrium size.\
-$N_1$ the population size instantaneous reduction from human impact or contraction. We may also use $n$ as this is a smaller population, not in equilibrium.\
-$N_t$ the population size at a given time $t$.\
-$A_0$ the habitat area of a species with multiple populations (useful to use area to avoid defining discrete entities).\
-$A_1$ the habitat area of a species reduced from human impact or contraction.
+- $N_0$ = population size at some past time (long-term equilibrium size)
+- $N_1$ = population size after instantaneous reduction from human impact or contraction (smaller population, not in equilibrium)
+- $N_t$ = population size at time $t$
+- $A_0$ = original habitat area of a species with multiple populations
+- $A_1$ = reduced habitat area after human impact or contraction
 
-\*Parameters of change\*
+**Parameters of change**
 
-$X_{\pi}$ the fraction loss of genetic diversity $\pi$. Intuitive % of genetic diversity loss when $X_{\pi} \times 100$.
+- $X_{\pi}$ = fraction loss of genetic diversity $\pi$ (intuitive % loss when $X_{\pi} \times 100$)
+- $X_M$ = fraction loss of allelic richness $M$
+- $X_N$ = fraction loss of population size = $1 - (N_1/N_0)$
 
-Same for $X_M$ the fraction loss of allelic richness $M$.
+### Stable state of genetic diversity in a population
 
-### Stable state of diversity of a population
-
-Assuming starting equilibrium conditions (here $N_e = N_0$), we know the expected genetic diversity in a population through the genealogical process (coalescent process of individuals into their ancestors). The total length of all coalescent branches of a population genealogy, $L_{\text{total}}$, and the mutation rate of a species, thus $M = \mu L_{\text{total}}$.
+Under equilibrium conditions (where $N_e = N_0$), the expected genetic diversity follows from the coalescent process. The total length of all coalescent branches in a population genealogy is $L_{\text{total}}$, and the number of mutations is $M = \mu L_{\text{total}}$.
 
 The expected genealogy size under the coalescent is:
 
 $$E[L_{\text{total}}] = 2N_e H_{n-1} \approx 2N_e \log(n-1) + c$$
 
-where $2N_e$ is the average time to coalesce between any two samples, and the harmonic of $n-1$ represents the progressive coalescent of all samples, which can be approximated with a logarithm.
+where:
+- $2N_e$ = average time to coalescence between any two samples
+- $H_{n-1}$ = harmonic number representing progressive coalescent of all samples
+- This can be approximated with $\log(n-1)$ for large $n$
 
-Then:
+Therefore:
+$$E[M] = \mu E[L_{\text{total}}] \approx \mu \cdot 2N_e \log(n-1)$$
 
-$$E[M] = \mu E[L_{\text{total}}]$$ This thinking also helps us understand the other metric, nucleotide diversity $\pi$ (which is equivalent to expected heterozygosity under biallelic variants), which under equilibrium is:
+For nucleotide diversity $\pi$ (equivalent to expected heterozygosity under biallelic variants), under equilibrium:
 
-$$E[\pi] = 4N_e \mu$$,
+$$E[\pi] = 4N_e \mu$$
 
-representing the average number of genetic variants along a stretch of DNA between two samples (or also, the probability of sampling two different alleles if focused on a single DNA position). This is because for $\pi$ we do not need the entire coalescent genealogy, but the average distance between any two samples is twice the time to coalesce:
+This represents the average number of genetic variants between two samples along a DNA stretch, derived from the average pairwise coalescent time:
 
-$$E[L_{\text{pairwise}}] = 2 \times 2N_e$$
+$$E[L_{\text{pairwise}}] = 2 \times 2N_e = 4N_e$$
 
-These simple mental models help us also understand that $M$ values are more sensitive to low-frequency genetic variants, as a mutation---even if there is 1 single individual in the population---is counted in $M$, whereas $\pi$ is more sensitive to intermediate-frequency genetic variants. On average, it is more likely that two individuals sampled in a population differ in genetic variants that are at intermediate frequency (e.g., a frequent bi-allelic variant C/T of frequency $p_C=0.5$, would likely contribute to a difference between two samples with probability $2p_C(1 - p_C) = 0.25$, whereas another low-frequency bi-allelic variant G/A, $p_G = 0.05$ would only contribute with probability $2p_G(1 - p_G) = 0.095$).
+**Key insight**: $M$ is more sensitive to low-frequency variants (any mutation in ≥1 individual counts), while $\pi$ is more sensitive to intermediate-frequency variants. For a biallelic variant with frequency $p$, the probability that two random samples differ is $2p(1-p)$, maximized at $p=0.5$.
 
-### Summary of loss and gain scenarios we aim to understand
+### Summary of loss and gain scenarios
 
-Our goal is to understand how genetic diversity changes (for both key parameters $\pi$ and $M$) and get numerical expectations based on several scenarios. It is useful to separate scenarios in *space* and *time*.
+We examine genetic diversity changes for both $\pi$ and $M$ under different spatio-temporal scenarios:
 
-First, spatially, we may think of a **scenario 1** species contracting as a single population declining (this may be more applicable for a threatened species and the last remaining individuals), or a **scenario 2** of a species, threatened or not, distributed in multiple populations where a fraction of populations are lost.
+**Spatial scenarios:**
+- **Scenario 1**: Single population declining (applicable to threatened species)
+- **Scenario 2**: Multiple populations with fraction of populations lost
 
-Second, temporally, we may think of a **scenario a** sudden immediate decline of the population where the loss of genetic diversity occurs directly from the mortality of individuals carrying certain unique DNA variants, or a **scenario b** of a loss of alleles due to the inherent demographic stochastic effect on genetic variation (i.e. genetic drift).
+**Temporal scenarios:**
+- **Scenario a**: Sudden immediate decline (direct mortality effect)
+- **Scenario b**: Loss due to demographic stochasticity over time (genetic drift)
 
-We then may generate combinations of these spatio-temporal scenarios 1a, 1b, 2a, 2b, which we aim to summarize expectations for below.
-
-------------------------------------------------------------------------
+**Combined scenarios**: 1a, 1b, 2a, 2b
 
 ------------------------------------------------------------------------
 
 ## DIVERSITY DECLINES
 
-## Loss scenario 1a - No time no space (single population immediately contracting)
+### Loss scenario 1a: Immediate population contraction (no drift effects)
 
-Having pi that does not change
+When a population contracts immediately from $N_0$ to $N_1$ within a single generation, we can model this as statistical subsampling.
 
-Having n1 and n0 which are subsamples of the popualtion at two times
+#### Loss of π
 
-Can we get maximum pi 1 - pi 0 / pi0 95%CI
+For nucleotide diversity, the sampling effect creates a downward bias. Under the coalescent, when sampling $n$ individuals from a finite population of size $N$, there's a probability $\frac{1}{2N}$ that samples coalesce to the same ancestor (yielding zero diversity). Additionally, finite sampling creates bias captured by $(1 - \frac{1}{n})$.
 
-$$\hat{\pi}_{\text{sample}} = \pi_{\text{true}} \cdot \left(1 - \frac{1}{2N} \right) \cdot \left(1 - \frac{1}{n} \right)$$
+The relationship becomes:
+$$\pi_1 = \pi_0 \cdot \left(1 - \frac{1}{2N_1}\right) \cdot \left(1 - \frac{1}{n}\right)$$
 
-With equilibrium $E[\pi] = 4N\mu$ and $E[M] = \mu E[L_{\text{total}}]$, we can deduce immediate genetic diversity losses, $X_\pi$ and $X_M$. Such a scenario of immediate population reduction from $N_0$ that was in equilibrium, to $N_1$, not in equilibrium (fraction of population lost $X_N = 1 - (N_1/N_0)$), can be also thought as a a statistical subsample of a larger population.
+**Key result**: Loss is proportional to $\frac{1}{2N_1}$, so $X_\pi \approx \frac{1}{2N_1}$. This means:
+- Very small genetic diversity loss unless $N_1 < 40$
+- Even at $N_1 = 40$: $X_\pi = 0.0125$ (1.25% loss)
+- $\pi$ is largely unaffected by bottlenecks within one generation unless near-complete population eradication occurs
 
-### Loss of π
+#### Loss of alleles M
 
-Average diversity $\pi$ depends on the average pairwise coalescent genealogy length, $L_{\text{pairwise}}$, for which we have seen $E[L_{\text{pairwise}}] = 2N_0$.
+Since $M_0 \propto \log(N_0)$ under equilibrium, the fractional loss is:
 
-A population average can be statistically estimated by measuring a fraction of individuals, and the sample average progressively becomes more accurate true population value as such measurement increases (theoretically $n \rightarrow \infty$ or close to the total population, $n \rightarrow N_0$). We can think of a new population size $N_1$ as such a sample. I the coalescent, we know that when a sample is small the average is downwardly biased, meaning with a sudden subsample the average genetic diversity is smaller:
+$$X_M = 1 - \frac{M_1}{M_0} = 1 - \frac{\log(N_1)}{\log(N_0)}$$
 
-$$E[L_{\text{pairwise}}] = 2N_0 \left(1 - \frac{1}{N_1}\right)$$
+Substituting $N_1 = N_0(1 - X_N)$:
 
-However, note that the loss is in the order of $\frac{1}{N_1}$, so is a small term and we expect very small genetic diversity loss: $X_\pi \approx 0$; unless the population size goes really low, $N_1 < 20$, when the loss would still be quite small: $X_\pi = \frac{1}{N_1} = 0.05$ (i.e. 5% loss). In other words, $\pi$ will not be affected by a bottleneck within 1 generation unless this is almost complete population eradication. This is because $\pi$ measures average genetic distance among individuals, which builds up over many generations of evolution, and mostly depends on alleles of intermediate frequency, which are less likely to be lost with population decline.
+$$X_M = 1 - \frac{\log(N_0(1 - X_N))}{\log(N_0)} = 1 - \frac{\log(N_0) + \log(1 - X_N)}{\log(N_0)}$$
 
-### Loss of alleles $M$
+$$X_M = -\frac{\log(1 - X_N)}{\log(N_0)}$$
 
-Next we study the loss of all alleles. Since we have already derived $M_0 \propto \log(N_0)$, we can take the fraction the fraction lost:
-
-$$X_{M} = 1 - \frac{M_1}{M_0} = 1 - \frac{\log(N_1)}{\log(N_0)} = -\frac{\log(1 - X_{N})}{\log(N_0)}$$
-
-This tells us that the magnitude of genetic diversity loss $X_M$ is log-proportional to the loss in population size $\log(1 - X_N)$, which is very small, and that species that started with larger populations $\log(N_0)$ lose even smaller amounts of genetic diversity.
-
-For instance, a population that started in $N_0 = 10,000$ individuals, even with a dramatic 50% reduction ($X_N = 0.5$) to $N_1 = 5,000$ individuals, only suffers a $X_M = 7%$ allelic genetic diversity loss.
-
-With this in hand, we deduce genetic diversity losses, $X_\pi$ and $X_M$, for the first scenario of immediate population reduction (scenario 1a). Such a scenario of immediate population reduction from $N_0$ that was in equilibrium, to $N_1$, not in equilibrium (fraction of population lost $X_N = 1 - (N_1/N_0)$), can be derived as the latter being a statistical subsample of a larger population.
-
-This tells us that the magnitude of genetic diversity loss $X_M$ is log-proportional to the loss in population size $\log(1 - X_N)$, which is very small, and that species that started with larger populations $\log(N_0)$ lose even smaller amounts of genetic diversity.
-
-For instance, a population that started in $N_0 = 10,000$ individuals, even with a dramatic 50\_ reduction ($X_N = 0.5$) to $N_1 = 5,000$ individuals, only suffers a $X_M = 7%$ allelic genetic diversity loss.
+**Key insights**:
+- Genetic diversity loss $X_M$ is log-proportional to population size loss $\log(1 - X_N)$
+- Species with larger initial populations lose smaller fractions of genetic diversity
+- **Example**: $N_0 = 10,000$, 50% reduction ($X_N = 0.5$) → $X_M = 7.5%$ allelic diversity loss
 
 ------------------------------------------------------------------------
 
-## Loss scenario 1b - Effect of drift
+### Loss scenario 1b: Effect of drift over time
 
-### Loss of π
+#### Loss of π over time
 
-This is known (Crow & Kimura, 1970) equation $H_t = H_0 (1-\frac{1}{2N})^t$. Can be rearranged to have in the left the fraction of genetic diversity loss $1-\frac{H_t}{H_0}$. This results in:
-
-$$X_{\pi} = \frac{1}{2N}^t$$
-
-Despite the minor effect on genetic diversity of population bottlenecks, the worries of conservation geneticists stem from the downstream drift caused over generations, especially as this loss of genetic diversity is accompanied by inbreeding, which can decrease fitness.
-
-Changes in genetic diversity over time (scenario 1b) are well described for $\pi$ diversity, with the classic formula:
+Changes in nucleotide diversity over time follow the classic formula:
 
 $$\pi_t = \pi_0 \times \left(1 - \frac{1}{2N}\right)^t$$
 
-Thus, each generation:
-
+The fractional loss after $t$ generations:
 $$X_\pi = 1 - \left(1 - \frac{1}{2N}\right)^t$$
 
-Rearranged, this gives:
+Rearranging to solve for effective population size:
+$$N = \frac{1}{2\left[1 - (1 - X_\pi)^{1/t}\right]}$$
 
+**Example**: For $N = 100$ individuals:
+- $X_\pi = 0.5\%$ per generation
+- ~5% loss over 10 generations
+- This insight supports the conservation genetics recommendation of maintaining $N > 500$
 
-$$N = \frac{1}{2\left[1 - (1 - X_\pi)^{1/t} \right]}$$
+#### Loss of alleles M over time
 
-For a population of 100 individuals, this would mean $X_\pi = 0.5%$ each generation, approximately 5% in 10 generations. This insight led to the theory-driven recommendation in conservation genetics to maintain populations above 500 individuals.
+The probability that an allele with frequency $p_i$ is lost in one generation is $(1 - p_i)^{2N}$.
 
-### Loss of alleles $M$
-
-For alleles, the change is more complicated, and there are no established equations. But we can rely on the observation that the probability of an allele to be lost over time is:
-
-$$(1 - p_i)^{2N}$$
-
-Therefore, the allelic richness after one generation would be:
-
+The allelic richness after one generation:
 $$M_1 = M_0 - \sum_i (1 - p_i)^{2N}$$
 
-Note that this depends on the distribution of frequencies of alleles $i$. We could approximate the loss based on average frequency:
+**Simplified approximation**: Discretizing frequency distribution into:
+- Rare alleles (<1%): high loss probability (>50%)
+- Uncommon alleles (1-10%): moderate loss probability  
+- Common alleles (>10%): very low loss probability (<0.1%)
 
-$$X_M = 1 - \frac{1}{M_0} \sum_j M(1 - p_j)^{2N_1} \approx (1 - \hat{p})^{2N_1}$$
+Using the standard frequency distribution $f(p) \propto \theta/p$:
 
-, but this is not very helpful as the change is very sensitive to the variation in frequency across alleles.
+$$X_M \approx f(p<0.01) \cdot (1 - \bar{p}_{\text{rare}})^{2N} + f(p_{0.01-0.1}) \cdot (1 - \bar{p}_{\text{uncommon}})^{2N} + f(p>0.1) \cdot (1 - \bar{p}_{\text{common}})^{2N}$$
 
-We can integrate over the distribution of frequencies which in population genetics is often modeled as: $f(p) \approx \theta/p$, but to provide a intuitive (but short!) crude approximation we discretize the frequency distribution into rare (\<1%), uncommon (1--10%), and common (\>10%). These three categories of alleleshave qualitatively different behaviours. Rare alleles are very likely to be lost (\>50% probability), while common alleles very rarely would be lost (\<\<0.1% probability). In turn, the number of alleles within each category can be calculated from $f(p) \approx \theta/p$
+**Example**: 90% population decline ($N_0 = 1000 → N_1 = 100$):
+- $X_M \approx 15\%$ allelic richness loss per generation
 
-$$X_M \approx f(p<0.01) \cdot (1 - p<0.01)^{2N} + f(p=0.01-0.1) \cdot (1 - p_{0.01-0.1})^{2N} + f(p>0.1) \cdot (1 - p>0.1)^{2N}$$
-
-Although this looks cumbersome, it is easy to calculate that a 90% population decline (e.g., $N_0 = 1000$, $N_1 = 100$), the loss of allelic richness from drift over generations is approximately: $X_M \approx 0.15$ (i.e. 15%) per generation.
-
-Over generations, this equation is exponentiated to $t$ generations:
-
-$$P_{\text{survival}}(p) = 1 - \left(1 - p\right)^{2N_1 t}$$
+Over $t$ generations, survival probability for allele with frequency $p$:
+$$P_{\text{survival}}(p) = 1 - (1 - p)^{2N_1 t}$$
 
 ------------------------------------------------------------------------
 
-## Loss scenario 2a - spatial geographic contraction
+### Loss scenario 2a: Spatial geographic contraction (immediate)
 
-### Loss of π
+#### Loss of π with population structure
 
-The most intuitive way to begin understanding loss of populations is through the measurement of population differentiation, $F_{ST}$. This fixation index,using Nei's definition, is by definition explaining how genetic diversity is distributed across populations $F_{ST} = \frac{ \pi_{\text{total}}- \pi_{\text{within}} }{\pi_{\text{total}}}$, where $\pi_{\text{total}} = \pi_{\text{within}} + \pi_{\text{between}}$.
+We use the fixation index $F_{ST}$ (Nei's definition):
+$$F_{ST} = \frac{\pi_{\text{total}} - \pi_{\text{within}}}{\pi_{\text{total}}}$$
 
-We then may think of a species as comprised by different populations or demes, $k$ demes, of which $x$ may become extinct. The total amoount of genetic diversity of the species is then split as:
+where $\pi_{\text{total}} = \pi_{\text{within}} + \pi_{\text{between}}$.
 
-$$\pi_{\text{total}} = \frac{1}{k} \pi_{\text{within}} + \frac{k-1}{k} \pi_{\text{between}}$$ We can then also make the useful definitions of $\pi_{\text{within}}$ and $\pi_{\text{between}}$ as function of other terms including $F_{ST}$:
+For a species with $k$ populations, total genetic diversity is:
+$$\pi_{\text{total}} = \frac{1}{k}\pi_{\text{within}} + \frac{k-1}{k}\pi_{\text{between}}$$
 
+We can express components in terms of $F_{ST}$:
 $$\pi_{\text{within}} = (1 - F_{ST}) \times \pi_{\text{total}}$$
+$$\pi_{\text{between}} = \frac{F_{ST}}{k-1} \times k \times \pi_{\text{total}}$$
 
-$$\frac{\pi_{\text{between}}}{\pi_{\text{total}}} = \frac{k - (1 - F_{ST})}{k - 1}$$
+After losing $x$ populations, the new total diversity:
+$$\pi_{\text{total}}' = \frac{1}{k-x}\pi_{\text{within}} + \frac{k-x-1}{k-x}\pi_{\text{between}}$$
 
-Once the number of $x$ demes is lost, the new total genetic diversity follows:
+The fractional change:
+$$X_\pi = \frac{\pi_{\text{total}}'}{\pi_{\text{total}}} - 1$$
 
-$$\pi_{\text{total}}{\prime} = \frac{1}{k - x} \pi_{\text{within}} + \frac{k - x - 1}{k - x} \pi_{\text{between}}$$
+Substituting and simplifying:
+$$X_\pi = \frac{1}{k-x}(1-F_{ST}) + \frac{k-x-1}{k-x} \times \frac{k-(1-F_{ST})}{k-1} - 1$$
 
-The fraction we are interested is the past diversity compared to the new diversity as percentage change after impact: $X_\pi = \frac{\pi_{\text{total}}{\prime}}{\pi_{\text{total}}} - 1$. Then rearranging:
+**Key insights**:
+- Minimum populations ($k=2$): $X_\pi = F_{ST}$
+- As $k$ increases, loss per population decreases
+- **Example**: $F_{ST} = 0.2$, 50% area contraction → $X_\pi \approx 0.2\%$ to 20% (depending on $k = 2$ to 100)
 
-$$X_\pi =\frac{\pi_{\text{total}}{\prime}}{\pi_{\text{total}}} -1 = \frac{1}{k - x}(1 - F_{ST}) + \frac{k - x - 1}{k - x} \times \frac{k - (1 - F_{ST})}{k - 1} -1$$
+**Continuous space approximation**: Using the Genetic Diversity-Area Relationship (GDAR):
+$$\pi = cA^{z_{\text{GDAR}}}$$
 
-This gives us two intuitions in the extremes: when the number of populations is small, $k=2$, the loss of genetic diversity is the largest: $X_\pi = F_{ST}$, and as $k$ grows the amount of genetic diversity lost by any given deme decreases. This is because with more demes and more connections, the total genetic diversity is dominated by between-deme diversity and losing a deme represents a smaller fraction. Therefore, with an assumed $F_{ST}$=0.2, and a 50% area contraction, the loss would be: $X_\pi \approx$ 0.2% - 20%; depending on the assumption of the total number of demes (i.e. \$k=\$2--100).
+where empirically $z_{\text{GDAR}} \approx 0.05$. This gives:
+$$X_\pi = 1 - \left(\frac{A_1}{A_0}\right)^{z_{\text{GDAR}}} = 1 - (1 - X_A)^{z_{\text{GDAR}}}$$
 
-A derivation in continuous space is not straightforward, but a phenomenological relationship that would be useful for predictions is the Genetic-diversity-(π)-area relationship (GDAR). This was recently described as $\pi = cA^z$, where $z_{\text{GDAR}} \approx 0.05$ fitted with genomic data of about 20 species where multiple geographic populations within a species were sequenced and subsampled spatially (Mualim et al. 2024). Rearranging the terms of the power law gives us: $X_\pi = 1 - \left(1 - \frac{A_t}{A_{t-1}}\right)^{z_{\text{GDAR}}}$. With this, a 50% area reduction, we would expect $X_\pi \approx$ 3%.
+**Example**: 50% area reduction → $X_\pi \approx 3.4\%$
 
-### Loss of alleles
+#### Loss of alleles M with spatial contraction
 
-We do not have a simple derivation among multiple populations. However, the original description of a genetic diversity-area relationship within a species was thought for alleles (Exposito-Alonso et al. 2022): Mutations-area relationship (MAR) of the form: $M = cA^z$; for which there is (Lin et al. 2025). The exponent value measured in about 20 species to have an average: $z_{MAR} \approx$ 0.25. As before, rearranged to understand the loss, we get: $X_M = 1 - \left(1 - \frac{A_t}{A_{t-1}}\right)^{z_{\text{MAR}}}$. This Shows that with a 50% reduction in habitat area, we would have a larger allelic richness loss, $X_M \approx$ 19%.
+Using the Mutations-Area Relationship (MAR):
+$$M = cA^{z_{\text{MAR}}}$$
+
+where empirically $z_{\text{MAR}} \approx 0.25$. This gives:
+$$X_M = 1 - (1 - X_A)^{z_{\text{MAR}}}$$
+
+**Example**: 50% area reduction → $X_M \approx 19\%$ allelic richness loss
 
 ------------------------------------------------------------------------
 
-## Loss scenario 2b - spatial geographic contraction and drift ofver time
+### Loss scenario 2b: Spatial contraction with drift over time
 
-The temporal version of spatial extinction dynamics causes further drift loss, only predictable with more sophisticated numerical methods (scenario 2b). These models explain genetic diversity loss in many non-threatened species with moderate to large geographic ranges---different from classic conservation studies of extremely reduced populations (scenario 1a--b), and more relevant to global within-species diversity loss.
+This scenario combines spatial extinction with ongoing demographic stochasticity. The temporal dynamics require sophisticated numerical methods (e.g., Wright-Fisher moments) and are beyond simple analytical solutions. These models are particularly relevant for:
 
-### Loss of π with spatial contraction and over time
-
-WFmoments
-
-### Loss of alleles with spatial contraction and over time
-
-WFmoments
+- Non-threatened species with moderate to large geographic ranges
+- Global within-species diversity loss (vs. classic conservation studies of extremely reduced populations)
+- Long-term predictions of genetic diversity under habitat fragmentation
 
 ------------------------------------------------------------------------
 
-------------------------------------------------------------------------
+## DIVERSITY INCREASES
 
-## DIVERSITY INCREASE
+### Gain scenario 1b: Population growth over time
 
-### Gain scenario 1b - Classic population growth
+Starting from the classic equation, rearranged for expansion. $\pi_0 = 4N_0\mu$ (diversity before expansion). $\pi_\infty = 4N_1\mu$ (new equilibrium after expansion). $\pi_t$ = diversity $t$ generations after expansion
 
-$$\pi_t = \pi_\infty + (\pi_0 - \pi_\infty) \left(1 - \frac{1}{2N_1} \right)^t$$
+The trajectory follows:
+$$\pi_t = \pi_\infty + (\pi_0 - \pi_\infty)\left(1 - \frac{1}{2N_1}\right)^t$$
 
-Where: • $\pi_0$ = $4N_0\mu$ (diversity before the expansion), • $\pi_\infty$ = $4N_1\mu$ (new equilibrium), • $\pi_t$ : diversity t generations after expansion.
+**Derivation of fractional change**:
 
-So genetic diversity follows an exponential approach to the new equilibrium:
+Define the population growth ratio: $r = \frac{N_1}{N_0}$
 
-Divide by starting pi
+Then $\frac{\pi_\infty}{\pi_0} = \frac{4N_1\mu}{4N_0\mu} = r$
 
-$$\frac{\pi_t}{\pi_0} = \frac{\pi_\infty}{\pi_0} + \frac{\pi_0 - \pi_\infty}{\pi_0} \left(1 - \frac{1}{2N_1} \right)^t$$
-
-Now subtract 1 from both sides to define:
-
+The fractional change from baseline:
 $$X_t = \frac{\pi_t - \pi_0}{\pi_0}$$
 
-So then
+Substituting and simplifying:
+$$X_t = r + (1-r)\left(1 - \frac{1}{2N_1}\right)^t - 1$$
 
-$$X_t = \frac{\pi_\infty}{\pi_0} + \left(1 - \frac{\pi_\infty}{\pi_0} \right) \left(1 - \frac{1}{2N_1} \right)^t - 1$$
+$$X_t = (r-1) + (1-r)\left(1 - \frac{1}{2N_1}\right)^t$$
 
-Then factor out pi inf / pi zero
+Expressing in terms of population change $X_n = \frac{N_1-N_0}{N_0} = r-1$:
 
-$$r = \frac{N_1}{N_0} \Rightarrow \frac{\pi_\infty}{\pi_0} = \frac{4N_1\mu}{4N_0\mu} = \frac{N_1}{N_0} = r$$ $$X_t = r + (1 - r) \left(1 - \frac{1}{2N_1} \right)^t - 1$$
+$$X_t = X_n\left[1 - \left(1 - \frac{1}{2N_1}\right)^t\right]$$
 
-$$X_t = (1 - r) \left(1 - \frac{1}{2N_1} \right)^t + r - 1$$ $$X_t = (1 - \frac{N_1}{N_0}) \left(1 - \frac{1}{2N_1} \right)^t + \frac{N_1}{N_0} - 1$$
+Or in terms of original population size:
+$$X_t = X_n\left[1 - \left(1 - \frac{1}{2N_0(1+X_n)}\right)^t\right]$$
 
-Now make it as a function of change in population size (percentage) $$X_n = \frac{N_1 - N_0}{N_0} = \frac{N_1}{N_0} - 1$$
+**Interpretation**: The genetic diversity approaches the new equilibrium value exponentially, with rate depending on the expanded population size $N_1$.
 
-$$\frac{N_1}{N_0} = 1 + X_n\quad \text{and} \quad 1 - \frac{N_1}{N_0} = -X_n$$ Then substitute $$X_t = (-X_n) \cdot \left(1 - \frac{1}{2N_1} \right)^t + X_n$$
+### Gain scenario 2a: Spatial expansion ($F_{ST}$ based)
 
-And final simplification:
+When populations expand spatially and come into contact, genetic diversity increases. The proportional increase can be derived from population differentiation, starting from: $F_{ST} = 1 - \frac{\pi_{\text{within}}}{\pi_{\text{total}}}$.
 
-$$X_t = X_n \left[ 1 - \left(1 - \frac{1}{2N_1} \right)^t \right]$$
+The relationship between diversity gain and population structure can be re-arranged then as:
 
-$$X_t = X_n \left[ 1 - \left(1 - \frac{1}{2N_0+N_0*Xn} \right)^t \right]$$
+$$X_\pi = \frac{F_{ST}}{1 - F_{ST}}$$
 
-### Gain scenario 2a - $F_{ST}$ based deduction
+Conversely: $F_{ST} = \frac{X_\pi}{1 + X_\pi}$.
 
-We can define the proportional increase in π as:
+\
 
-$$F_{ST} = 1 - \frac{\pi_{\text{within}}}{\pi_{\text{total}}}$$
+**Interpretation**: Higher population differentiation leads to greater potential diversity gains upon population mixing or expansion.
 
-$$X_t = \frac{F_{ST}}{1 - F_{ST}} \quad  $$
-
-$$\quad F_{ST} = \frac{X_t}{1 + X_t}$$
+------------------------------------------------------------------------
 
 ## REFERENCES
 
-Exposito-Alonso M, Booker TR, Czech L, et al. Genetic diversity loss in the Anthropocene. Science. 2022;377(6613):1431-1435. <doi:10.1126/science.abn5642>
+\
+Exposito-Alonso M, Booker TR, Czech L, et al. Genetic diversity loss in the Anthropocene. Science. 2022;377(6613):1431-1435. doi:10.1126/science.abn5642
 
-Mualim KS, Spence JP, Weiß C, Selmoni O, Lin M, Exposito-Alonso M. Genetic diversity loss in the Anthropocene will continue long after habitat destruction ends. bioRxiv. Published online October 22, 2024:2024.10.21.619096. <doi:10.1101/2024.10.21.619096>
-
-Meixi Lin, Kristy Mualim, Oliver Selmoni, Moises Exposito-Alonso. mar and marApp: An R package with shinyApp for calculating the mutations-area relationship from site-frequency spectrum. bioRxiv. Published online 2025.
+\
+Mualim KS, Spence JP, Weiß C, Selmoni O, Lin M, Exposito-Alonso M. Genetic diversity loss in the Anthropocene will continue long after habitat destruction ends. bioRxiv. Published online October 22, 2024:2024.10.21.619096. doi:10.1101/2024.10.21.619096

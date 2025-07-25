@@ -163,6 +163,12 @@ compute_diversity_change <- function(df) {
   # SE for percent change
   df$SE.Percent.Change <- (df$SE.Diff / df$Early.Diversity) * 100
   
+  # SE for percent change using delta method
+  df$SE.Percent.Change.delta <- sqrt(
+    (100 / df$Early.Diversity)^2 * df$Recent.SE^2 +
+      (100 * df$Recent.Diversity / df$Early.Diversity^2)^2 * df$Early.SE^2
+  )
+  
   # 95% Confidence Intervals
   df$Lower.CI <- df$Percent.Change - 1.96 * df$SE.Percent.Change
   df$Upper.CI <- df$Percent.Change + 1.96 * df$SE.Percent.Change
@@ -189,9 +195,25 @@ compute_diversity_change <- function(df) {
   df$Hedges.g.CI.lower.recalc <- df$Hedges.g.recalc - 1.96 * df$Hedges.g.SE.recalc
   df$Hedges.g.CI.upper.recalc <- df$Hedges.g.recalc + 1.96 * df$Hedges.g.SE.recalc
   
+  # The log ratio approach
+  # Log ratio of diversity
+  df$Log.Change <- log(df$Recent.Diversity / df$Early.Diversity)
+  
+  # Standard error of log ratio
+  df$SE.Log.Change <- sqrt(
+    (df$Recent.SE / df$Recent.Diversity)^2 +
+      (df$Early.SE / df$Early.Diversity)^2
+  )
+  
+  # 95% confidence interval
+  df$Log.CI.lower <- df$Log.Change - 1.96 * df$SE.Log.Change
+  df$Log.CI.upper <- df$Log.Change + 1.96 * df$SE.Log.Change
+  
   # Return selected columns
   return(df[, c("Recent.Diversity", "Early.Diversity", "Percent.Change",
-                "Lower.CI", "Upper.CI", "SE.Percent.Change", "Effective.N",
+                "Lower.CI", "Upper.CI", "SE.Percent.Change", "SE.Percent.Change.delta","SE.Diff",
+                "Log.Change","SE.Log.Change",
+                "Effective.N",
                 "Hedges.g.recalc","Hedges.g.SE.recalc",
                 "Hedges.g.CI.lower.recalc","Hedges.g.CI.upper.recalc",
                 "SD.Percent.Change", "CV.Percent.Change")])
@@ -237,8 +259,9 @@ printCI <- function(x) {
   m <- mean(x)
   se <- sd(x) / sqrt(length(x))
   ci_half_width <- 1.96 * se
-  sprintf("%.2f%% ± %.2f%% (95%% CI)", m, ci_half_width)
-  return(ci_half_width)
+  ci_half_width <- format(ci_half_width, digits = 2)
+  # sprintf("%.2f%% ± %.2f%% (95%% CI)", m, ci_half_width)
+  return(as.numeric(ci_half_width))
 }
 clean<-function(x){
   format(x,digits=2)
@@ -321,6 +344,122 @@ metaztest <- function(g, se) {
 #   
 #   return(model)
 # }
+
+load_mcmc_model_designs <- function() {
+  tribble(
+    ~label, ~fixed_effects, ~random_effects, ~prior,
+    
+    # m1: Null model
+    "m1_none", NULL, NULL, NULL,
+    "m1_preg", NULL, NULL, list(R = list(V = 1e-4, nu = 10)),
+    "m1_pfix", NULL, NULL, list(R = list(V = 1e-4, nu = 100)),
+    "m1_pweak", NULL, NULL, list(R = list(V = 1, nu = 0.002)),
+    
+    # m2: PaperID only
+    "m2_none", NULL, c("PaperID"), NULL,
+    "m2_preg", NULL, c("PaperID"), list(R = list(V = 1e-4, nu = 10), G = list(G1 = list(V = 1e-4, nu = 10))),
+    "m2_pfix", NULL, c("PaperID"), list(R = list(V = 1e-4, nu = 100), G = list(G1 = list(V = 1e-5, nu = 100))),
+    "m2_pweak", NULL, c("PaperID"), list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1, nu = 0.002))),
+    
+    # m3: Z fixed effects, no random
+    "m3_none", " M.Gen.interval", NULL, NULL,
+    "m3_preg", " M.Gen.interval", NULL, list(R = list(V = 1e-4, nu = 10)),
+    "m3_pfix", " M.Gen.interval", NULL, list(R = list(V = 1e-4, nu = 100)),
+    "m3_pweak", " M.Gen.interval", NULL, list(R = list(V = 1, nu = 0.002)),
+    
+    # mshaw1: Shaw model
+    "mshaw1_none", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"), NULL,
+    "mshaw1_preg", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 10), G = list(G1 = list(V = 1e-4, nu = 10))),
+    "mshaw1_pfix", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 100), G = list(G1 = list(V = 1e-5, nu = 100))),
+    "mshaw1_pweak", "Z.Year.Midpoint + Z.Gen.interval", c("PaperID"),
+    list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1, nu = 0.002))),
+    
+    # mshaw2: Shaw model
+    "mshaw2_none", "M.Year.Midpoint + M.Gen.interval", c("PaperID"), NULL,
+    "mshaw2_preg", "M.Year.Midpoint + M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 10), G = list(G1 = list(V = 1e-4, nu = 10))),
+    "mshaw2_pfix", "M.Year.Midpoint + M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 100), G = list(G1 = list(V = 1e-5, nu = 100))),
+    "mshaw2_pweak", "M.Year.Midpoint + M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1, nu = 0.002))),
+    
+    # m4: Z fixed + PaperID
+    "m4_none", " M.Gen.interval", c("PaperID"), NULL,
+    "m4_preg", " M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 10), G = list(G1 = list(V = 1e-4, nu = 10))),
+    "m4_pfix", " M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1e-4, nu = 100), G = list(G1 = list(V = 1e-5, nu = 100))),
+    "m4_pweak", " M.Gen.interval", c("PaperID"),
+    list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1, nu = 0.002))),
+    
+    # m5: Z fixed + PaperID + Kingdom + Binomen.rotl
+    "m5_none", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl"), NULL,
+    "m5_preg", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl"),
+    list(R = list(V = 1e-4, nu = 10),
+         G = list(G1 = list(V = 1e-4, nu = 10), G2 = list(V = 1e-4, nu = 10), G3 = list(V = 1e-4, nu = 10))),
+    "m5_pfix", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl"),
+    list(R = list(V = 1e-4, nu = 100),
+         G = list(G1 = list(V = 1e-5, nu = 100), G2 = list(V = 1e-5, nu = 100), G3 = list(V = 1e-5, nu = 100))),
+    "m5_pweak", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl"),
+    list(R = list(V = 1, nu = 0.002),
+         G = list(G1 = list(V = 1, nu = 0.002), G2 = list(V = 1, nu = 0.002), G3 = list(V = 1, nu = 0.002))),
+    
+    # m6: Z fixed + PaperID + Kingdom + Binomen.rotl + Marker.Type
+    "m6_none", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl", "Marker.Type"), NULL,
+    "m6_preg", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl", "Marker.Type"),
+    list(R = list(V = 1e-4, nu = 10),
+         G = list(G1 = list(V = 1e-4, nu = 10), G2 = list(V = 1e-4, nu = 10), G3 = list(V = 1e-4, nu = 10), G4 = list(V = 1e-4, nu = 10))),
+    "m6_pfix", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl", "Marker.Type"),
+    list(R = list(V = 1e-4, nu = 100),
+         G = list(G1 = list(V = 1e-5, nu = 100), G2 = list(V = 1e-5, nu = 100), G3 = list(V = 1e-5, nu = 100), G4 = list(V = 1e-5, nu = 100))),
+    "m6_pweak", " M.Gen.interval", c("PaperID", "Kingdom", "Binomen.rotl", "Marker.Type"),
+    list(R = list(V = 1, nu = 0.002),
+         G = list(G1 = list(V = 1, nu = 0.002), G2 = list(V = 1, nu = 0.002), G3 = list(V = 1, nu = 0.002), G4 = list(V = 1, nu = 0.002)))
+  )
+}
+
+extract_mcmc_summary_tables <- function(model) {
+  # Extract full summary
+  smry <- summary(model)
+  
+  # G-structure table
+  g_structure <- smry$Gcovariances
+  g_structure$Term <- rownames(g_structure)
+  g_structure <- g_structure[, c("Term", "post.mean", "l-95% CI", "u-95% CI", "eff.samp")]
+  rownames(g_structure) <- NULL
+  
+  # R-structure table
+  r_structure <- smry$Rcovariances
+  r_structure$Term <- rownames(r_structure)
+  r_structure <- r_structure[, c("Term", "post.mean", "l-95% CI", "u-95% CI", "eff.samp")]
+  rownames(r_structure) <- NULL
+  
+  # Fixed effects
+  fixed_effects <- smry$solutions
+  fixed_effects$Term <- rownames(fixed_effects)
+  fixed_effects <- fixed_effects[, c("Term", "post.mean", "l-95% CI", "u-95% CI", "eff.samp", "pMCMC")]
+  
+  # Significance stars (optional)
+  fixed_effects$Signif <- cut(
+    fixed_effects$pMCMC,
+    breaks = c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
+    labels = c("***", "**", "*", ".", " "),
+    right = FALSE
+  )
+  fixed_effects$pMCMC <- paste0(formatC(fixed_effects$pMCMC, digits = 3, format = "f"), " ", fixed_effects$Signif)
+  fixed_effects$Signif <- NULL
+  
+  rownames(fixed_effects) <- NULL
+  
+  list(
+    g_structure = g_structure,
+    r_structure = r_structure,
+    fixed_effects = fixed_effects
+  )
+}
+
 metamcmc <- function(df, 
                      variable = "Percent.Change", 
                      se = "SE.Percent.Change",
