@@ -3822,7 +3822,8 @@ Median = `r printmedian((res$Area.Loss[res$pvalue_color==1]))`% of original rang
 IQR = `r printIQR((res$Area.Loss[res$pvalue_color==1]))`% of original range.\
 Range = `r printranges((res$Area.Loss[res$pvalue_color==1]))`% of original range.\
 
-<!-- ## Text S6 Possible future scenarios -->
+
+\clearpage
 
 ## Text S6: Simple population contraction averages from LPI
 
@@ -3831,7 +3832,7 @@ Range = `r printranges((res$Area.Loss[res$pvalue_color==1]))`% of original range
 REDO = F
 
 if (REDO) {
-  file_path <- "../dataLPI/LPD_2024_public.csv"
+  file_path <- "dataLPI/LPD_2024_public.csv"
   d <- read.csv(file_path, header = TRUE)
 
   # Estimate the trajectory of population using the log-linear pop model
@@ -3886,11 +3887,11 @@ if (REDO) {
     ) %>%
     ungroup()
 
-  write.csv(summary_df_species_simple, file = paste0("../dataLPI/summary_df_species_simple.csv"))
+  write.csv(summary_df_species_simple, file = paste0("dataLPI/summary_df_species_simple.csv"))
 
 } else {
   # Read precomputed summary file
-  summary_df_species_simple <- read.csv(file = paste0("../dataLPI/summary_df_species_simple.csv"))
+  summary_df_species_simple <- read.csv(file = paste0("dataLPI/summary_df_species_simple.csv"))
 }
 
 # Get simple statistic
