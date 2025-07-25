@@ -31,7 +31,12 @@ header-includes:
 \clearpage
 
 ```{r load libraries, echo=FALSE, message=FALSE, warning=FALSE, errors=FALSE, paged.print=FALSE}
-mypath<-"~/extinction/Response-GenDivMetaAnalysis/"
+# Get path programatic
+# mypath<-"~/extinction/Response-GenDivMetaAnalysis/"
+library(here)
+mypath <- here::here()  # This resolves to your project root (based on RStudio project or Git root)
+
+# Set the path for Rstudio and knitting process
 setwd(mypath)
 knitr::opts_knit$set(root.dir = mypath)
 
