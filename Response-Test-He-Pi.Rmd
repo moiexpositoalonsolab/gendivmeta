@@ -1,0 +1,98 @@
+---
+title: "Test averages separating diversity pi and He"
+author: "| Moi Exposito-Alonso\n| \n| Department of Integrative Biology, University
+  of California Berkeley, California, USA\n| Howard Hughes Medical Institute, University
+  of California Berkeley, California, USA\n| \n| Correspondance: moisesexpositoalonso@gmail.com\n"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    # toc: yes
+    # toc_depth: 3
+    latex_engine: xelatex
+    fig_caption: yes
+fontsize: 10pt
+mainfont: Times New Roman
+indent: no
+# header-includes:
+#   - \usepackage{etoolbox}
+#   - \usepackage{tocloft}
+#   - \usepackage{caption}
+#   - \renewcommand{\contentsname}{List of Texts}
+#   - \pretocmd{\caption}{\addcontentsline{toc}{section}{\protect\numberline{\thefigure}#1}}{}{}
+#   - \renewcommand{\figurename}{Figure S}
+#   - \renewcommand{\tablename}{Table S}
+#   - \pretocmd{\caption}{\addcontentsline{lot}{table}{\protect\numberline{\thetable}#1}}{}{}
+---
+
+```{r setup, warning=F, echo=F, include=FALSE}
+mypath<-"~/extinction/Response-GenDivMetaAnalysis/"
+setwd(mypath)
+knitr::opts_knit$set(root.dir = mypath)
+
+# Dadta
+library(dplyr)
+library(tidyr)
+
+# Tables
+library(dplyr)
+library(knitr)
+library(kableExtra)
+require(stringr)
+
+# Models
+library(MCMCglmm)
+
+# Plots
+library(latex2exp)
+library(scales)
+library(ggplot2)
+library(RColorBrewer)
+library(ggside)
+library(cowplot)
+
+library(ggplot2)
+
+library(showtext)
+
+
+source("Response-functions.R")
+
+```
+
+```{r read_data, echo=FALSE, eval=TRUE, warning=FALSE}
+dfheci<-read.csv("tmp/dfheci.csv")
+dfpionlyci<-read.csv("tmp/dfpionlyci.csv")
+```
+
+*For diversity* $H_e$\ 
+
+Arithmetic mean Hedge's g = `r printmean(dfheci$HedgesG)` ±`r printCI(dfheci$HedgesG)` (95% CI).\
+Weighted SE mean Hedge's g = `r clean(metaztest(dfheci$HedgesG,dfheci$HedgesG.err)$Weighted_mean)` ± `r clean(metaztest(dfheci$HedgesG,dfheci$HedgesG.err)$CI_half_width)`(95% CI).\
+MCMCglmm mean (intercept) of Hedge's g = `r posteriormcmc(metamcmc(dfheci, variable="HedgesG", se="HedgesG.err", random_effects=c("PaperID","Binomen.rotl") ))$summary` .
+
+
+Arithmetic mean % $\pi$ = `r printmean(dfheci$Percent.Change)`% ± `r printCI(dfheci$Percent.Change)`% (95% CI).\
+Weighted SE mean % $\pi$ = `r clean(metaztest(dfheci$Percent.Change,dfheci$SE.Percent.Change)$Weighted_mean)`% ± `r clean(metaztest(dfheci$Percent.Change,dfheci$SE.Percent.Change)$CI_half_width)`% (95% CI).\
+MCMCglmm mean (intercept) of % $\pi$ = `r posteriormcmc(metamcmc(dfheci, variable="SE.Percent.Change.delta", se="SE.Percent.Change.delta",random_effects=c("PaperID","Binomen.rotl")))$summary` .
+
+Geometric mean % $\pi$ = `r printmean((exp(mean(dfheci$Log.Change)) - 1) * 100)`% ± `r clean((exp(printCI(dfheci$Log.Change)) - 1) * 100)`% (95% CI).\
+Geometric Weighted SE mean % $\pi$ = `r clean((exp(mean(metaztest(dfheci$Log.Change, dfheci$SE.Log.Change)$Weighted_mean)) - 1) * 100)`% ± `r clean((exp(mean(metaztest(dfheci$Log.Change, dfheci$SE.Log.Change)$CI_half_width)) - 1) * 100)`% (95% CI).\
+Geometric MCMCglmm mean $\pi$ = `r 100*(exp(posteriormcmc(metamcmc(dfheci, variable="Log.Change", se="SE.Log.Change", random_effects=c("PaperID","Binomen.rotl") ))$center)-1 )`% 
+± `r 100*(exp(posteriormcmc(metamcmc(dfheci, variable="Log.Change", se="SE.Log.Change", random_effects=c("PaperID","Binomen.rotl") ))$hpi_half_width)-1 )`% (95% CI)
+
+*For diversity* $\pi$\
+
+Arithmetic mean Hedge's g = `r printmean(dfpionlyci$HedgesG)` ±`r printCI(dfpionlyci$HedgesG)` (95% CI).\
+Weighted SE mean Hedge's g = `r clean(metaztest(dfpionlyci$HedgesG,dfpionlyci$HedgesG.err)$Weighted_mean)` ± `r clean(metaztest(dfpionlyci$HedgesG,dfpionlyci$HedgesG.err)$CI_half_width)`(95% CI).\
+MCMCglmm mean (intercept) of Hedge's g = `r posteriormcmc(metamcmc(dfpionlyci, variable="HedgesG", se="HedgesG.err", random_effects=c("PaperID","Binomen.rotl") ))$summary` .
+
+
+Arithmetic mean % $H_e$ = `r printmean(dfpionlyci$Percent.Change)`% ± `r printCI(dfpionlyci$Percent.Change)`% (95% CI).\
+Weighted SE mean % $H_e$ = `r clean(metaztest(dfpionlyci$Percent.Change,dfpionlyci$SE.Percent.Change)$Weighted_mean)`% ± `r clean(metaztest(dfpionlyci$Percent.Change,dfpionlyci$SE.Percent.Change)$CI_half_width)`% (95% CI).\
+MCMCglmm mean (intercept) of % $H_e$ = `r posteriormcmc(metamcmc(dfpionlyci, variable="SE.Percent.Change.delta", se="SE.Percent.Change.delta",random_effects=c("PaperID","Binomen.rotl")))$summary` .
+
+Geometric mean % $H_e$ = `r printmean((exp(mean(dfpionlyci$Log.Change)) - 1) * 100)`% ± `r clean((exp(printCI(dfpionlyci$Log.Change)) - 1) * 100)`% (95% CI).\
+Geometric Weighted SE mean % $H_e$ = `r clean((exp(mean(metaztest(dfpionlyci$Log.Change, dfpionlyci$SE.Log.Change)$Weighted_mean)) - 1) * 100)`% ± `r clean((exp(mean(metaztest(dfpionlyci$Log.Change, dfpionlyci$SE.Log.Change)$CI_half_width)) - 1) * 100)`% (95% CI).\
+Geometric MCMCglmm mean $H_e$ = `r 100*(exp(posteriormcmc(metamcmc(dfpionlyci, variable="Log.Change", se="SE.Log.Change", random_effects=c("PaperID","Binomen.rotl") ))$center)-1 )`% 
+± `r 100*(exp(posteriormcmc(metamcmc(dfpionlyci, variable="Log.Change", se="SE.Log.Change", random_effects=c("PaperID","Binomen.rotl") ))$hpi_half_width)-1 )`% (95% CI)
+
